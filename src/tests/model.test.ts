@@ -10,9 +10,18 @@ import {
   replyForNextIssue,
   selectedItems,
 } from "../model";
-import { createDemoState } from "../synthetic-data";
+import { createDemoState, syntheticPhotoUrl } from "../synthetic-data";
 
 describe("issue rules", () => {
+  it("uses the configured deployment base for synthetic photos", () => {
+    expect(syntheticPhotoUrl).toBe(
+      "/familyweekly/synthetic/family-moments.png",
+    );
+    expect(createDemoState().families["demo-a"].contributions[0].photoSrc).toBe(
+      syntheticPhotoUrl,
+    );
+  });
+
   it("enforces the four-item maximum", () => {
     const family = createDemoState().families["demo-b"];
     family.contributions.push({ ...family.contributions[0], id: "fifth" });
