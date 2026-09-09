@@ -5,7 +5,7 @@ import type {
   FamilyWorkspace,
 } from "./model";
 
-const sprite = "/synthetic/family-moments.png";
+export const syntheticPhotoUrl = `${import.meta.env.BASE_URL}synthetic/family-moments.png`;
 
 const moments = [
   {
@@ -84,7 +84,7 @@ const makeItems = (
 ): Contribution[] =>
   moments.map((moment, index) => ({
     id: `${familyId}-item-${index + 1}`,
-    photoSrc: sprite,
+    photoSrc: syntheticPhotoUrl,
     photoPosition: moment.position,
     originalCaption: moment.caption,
     editedCaption: moment.caption,

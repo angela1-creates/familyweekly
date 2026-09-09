@@ -16,7 +16,11 @@ import {
   type FamilyWorkspace,
   type IssueStatus,
 } from "./model";
-import { createDemoState, demonstrationUrl } from "./synthetic-data";
+import {
+  createDemoState,
+  demonstrationUrl,
+  syntheticPhotoUrl,
+} from "./synthetic-data";
 
 type View = "setup" | "contributions" | "builder" | "approval" | "reply";
 
@@ -282,7 +286,7 @@ const addSyntheticItem = (): void => {
   const number = Date.now();
   family.contributions.push({
     id: `${family.id}-new-${number}`,
-    photoSrc: "/synthetic/family-moments.png",
+    photoSrc: syntheticPhotoUrl,
     photoPosition: "bottom right",
     originalCaption:
       "A new synthetic family moment, ready for a human-written caption.",
