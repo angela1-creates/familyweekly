@@ -21,9 +21,23 @@ describe("issue rules", () => {
 
   it("enforces the four-item maximum", () => {
     const family = createDemoState().families["demo-b"];
-    family.contributions.push({ ...family.contributions[0], id: "fifth" });
-    expect(selectedItems(family)).toHaveLength(5);
-    expect(approvalErrors(family)).toContain("Select no more than four items.");
+    family.contributions = Array.from({ length: 17 }, (_, index) => ({
+      id: `item-${index}`,
+      photoSrc: `blob:item-${index}`,
+      photoPosition: "center",
+      originalCaption: "A moment",
+      editedCaption: "A moment",
+      headline: `Item ${index + 1}`,
+      who: "Family",
+      contributor: "Priya",
+      contributorId: "demo-b-mara",
+      permission: true,
+      showsMinor: false,
+      guardianPermission: false,
+      status: "Draft" as const,
+    }));
+    expect(selectedItems(family)).toHaveLength(17);
+    expect(approvalErrors(family)).toContain("Select no more than 16 items.");
   });
 
   it("enforces the pilot-wide 50-photo limit", () => {
@@ -36,6 +50,21 @@ describe("issue rules", () => {
 
   it("blocks approval when permission is missing", () => {
     const family = createDemoState().families["demo-a"];
+    family.contributions = [{
+      id: "missing-permission",
+      photoSrc: "blob:photo",
+      photoPosition: "center",
+      originalCaption: "A moment",
+      editedCaption: "A moment",
+      headline: "A moment",
+      who: "Family",
+      contributor: "Elena",
+      contributorId: "demo-a-curator",
+      permission: false,
+      showsMinor: false,
+      guardianPermission: false,
+      status: "Draft",
+    }];
     expect(
       approvalErrors(family).some((error) =>
         error.includes("permission is required"),

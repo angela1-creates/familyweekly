@@ -18,6 +18,7 @@ export type ReplyPermission =
   "Keep private" | "Send to selected family members" | "Include in next issue";
 export type ApprovalLevel =
   "Preauthorized" | "Preview requested" | "Approval required";
+export const MAX_ISSUE_ITEMS = 16;
 
 export interface Contribution {
   id: string;
@@ -44,6 +45,7 @@ export interface FamilyContributor {
   name: string;
   token: string;
   active: boolean;
+  role: "curator" | "contributor";
 }
 
 export interface Reply {
@@ -94,7 +96,8 @@ export const approvalErrors = (family: FamilyWorkspace): string[] => {
   if (!family.familyName.trim()) errors.push("Family identity is required.");
   if (!family.recipientName.trim())
     errors.push("Recipient identity is required.");
-  if (selected.length > 4) errors.push("Select no more than four items.");
+  if (selected.length > MAX_ISSUE_ITEMS)
+    errors.push(`Select no more than ${MAX_ISSUE_ITEMS} items.`);
   if (selected.length === 0) errors.push("Select at least one item.");
   selected.forEach((item) => {
     if (!item.permission)
