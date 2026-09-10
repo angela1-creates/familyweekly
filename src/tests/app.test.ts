@@ -67,7 +67,7 @@ describe("Family Weekly application", () => {
       )?.value,
     ).toBe("We finally got everyone together for a picnic.");
     expect(document.body.textContent).toContain(
-      "After printing, handwrite a memory",
+      "Your notes",
     );
   });
 
@@ -138,13 +138,13 @@ describe("Family Weekly application", () => {
     );
   });
 
-  it("print CSS hides operator controls and defines exactly two printable pages", () => {
+  it("print CSS hides operator controls and supports dynamic page counts", () => {
     const css = readFileSync(join(process.cwd(), "src", "styles.css"), "utf8");
     expect(css).toContain("@media print");
     expect(css).toContain(".workflow-nav");
     expect(css).toContain("display: none !important");
     document.querySelector<HTMLElement>('[data-view="builder"]')?.click();
-    expect(document.querySelectorAll(".newspaper-page")).toHaveLength(2);
+    expect(document.querySelectorAll(".newspaper-page")).toHaveLength(1);
   });
 
   it("completes the contribute-to-print journey", () => {

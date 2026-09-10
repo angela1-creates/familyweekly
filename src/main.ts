@@ -93,6 +93,11 @@ const photoStyle = (item: Contribution): string => {
 const photoLabel = (item: Contribution): string =>
   item.who.trim() ? `Photograph of ${item.who}` : "Family photograph";
 
+const photoElement = (item: Contribution): string =>
+  item.photoSrc
+    ? `<img src="${escapeHtml(item.photoSrc)}" alt="${escapeHtml(photoLabel(item))}">`
+    : "<span>No photo added yet</span>";
+
 const contributorInviteUrl = (family: FamilyWorkspace, contributor: FamilyContributor): string =>
   `${window.location.origin}${import.meta.env.BASE_URL}#contributor/${family.id}/${contributor.id}/${contributor.token}`;
 
@@ -160,10 +165,11 @@ const contributionCard = (
   item: Contribution,
   index: number,
 ): string => `<article class="contribution-card" data-item-id="${item.id}">
-  <div class="photo-frame" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}">${item.photoSrc ? "" : "<span>No photo added yet</span>"}<button class="photo-remove" data-action="remove-item" data-id="${item.id}" aria-label="Remove ${escapeHtml(item.headline)}">×</button></div>
+  <div class="photo-frame" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}">${photoElement(item)}<button class="photo-remove" data-action="remove-item" data-id="${item.id}" aria-label="Remove ${escapeHtml(item.headline)}">×</button></div>
   <div class="contribution-content"><div class="card-heading"><div><span class="item-number">Item ${index + 1}</span><h3>${escapeHtml(item.headline)}</h3></div><span class="status">${item.status}</span></div>
     <label class="field"><span>Headline</span><input data-item-field="headline" value="${escapeHtml(item.headline)}"></label>
     <label class="field"><span>Original caption</span><textarea data-item-field="originalCaption" rows="3">${escapeHtml(item.originalCaption)}</textarea></label>
+    <label class="field"><span>Optional note to the recipient</span><textarea data-item-field="contributorNote" rows="2" placeholder="A sentence or two, like a greeting card">${escapeHtml(item.contributorNote ?? "")}</textarea></label>
     <fieldset class="permission-panel"><legend>Photo permission <strong>Required</strong></legend><label class="check"><input type="checkbox" data-item-field="permission" ${item.permission ? "checked" : ""}><span>I have permission to share this photo with this Family Weekly.</span></label></fieldset>
     <div class="form-grid compact">${fieldForItem(item, "Who is pictured", "who", item.who)}${fieldForItem(item, "Optional date", "date", item.date ?? "", "date")}${fieldForItem(item, "Optional place", "place", item.place ?? "")}${fieldForItem(item, "Contributor", "contributor", item.contributor)}</div>
     <label class="field"><span>Status</span><select data-item-field="status">${["Draft", "Ready for review", "Deferred", "Excluded"].map((status) => `<option ${item.status === status ? "selected" : ""}>${status}</option>`).join("")}</select></label>
@@ -203,7 +209,7 @@ const builderItem = (
   index: number,
   family: FamilyWorkspace,
 ): string => `<article class="editor-row">
-  <div class="photo-frame editor-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}">${item.photoSrc ? "" : "<span>No photo added yet</span>"}</div>
+  <div class="photo-frame editor-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}">${photoElement(item)}</div>
   <div><div class="card-heading"><div><span class="item-number">Story ${index + 1}</span><h3>${escapeHtml(item.headline)}</h3></div><div class="order-buttons"><button class="icon-button" data-action="move-earlier" data-id="${item.id}" aria-label="Move ${escapeHtml(item.headline)} earlier" ${index === 0 ? "disabled" : ""}>↑</button><button class="icon-button" data-action="move-later" data-id="${item.id}" aria-label="Move ${escapeHtml(item.headline)} later" ${index === selectedItems(family).length - 1 ? "disabled" : ""}>↓</button></div></div>
     <div class="comparison"><div><span>Original</span><p>${escapeHtml(item.originalCaption)}</p></div><label><span>Edited caption</span><textarea rows="4" data-item-field="editedCaption" data-id="${item.id}">${escapeHtml(item.editedCaption)}</textarea></label></div>
     ${item.suggestion ? `<div class="suggestion"><span class="eyebrow">Demonstration suggestion</span><p>${escapeHtml(item.suggestion)}</p><div class="button-row"><button data-action="accept-suggestion" data-id="${item.id}">Accept suggestion</button><button class="secondary" data-action="reject-suggestion" data-id="${item.id}">Reject</button></div></div>` : ""}
@@ -212,9 +218,11 @@ const builderItem = (
 
 const newspaper = (family: FamilyWorkspace): string => {
   const items = selectedItems(family);
+  const pageCount = Math.max(1, Math.ceil(items.length / 2));
+  const pageSize = 2;
   const pages = Array.from(
-    { length: Math.max(2, Math.ceil(items.length / 4)) },
-    (_, index) => items.slice(index * 4, index * 4 + 4),
+    { length: pageCount },
+    (_, index) => items.slice(index * pageSize, index * pageSize + pageSize),
   );
   return `<div id="newspaper" class="print-root paper-${family.paperSize.toLowerCase()} text-${family.textSize}" aria-label="${pages.length}-page newspaper preview">${pages
     .map(
@@ -224,9 +232,9 @@ const newspaper = (family: FamilyWorkspace): string => {
       ) => `<article class="newspaper-page" aria-label="Page ${pageIndex + 1} of ${pages.length}">
       ${pageIndex === 0 ? `<header class="masthead"><span>Family Weekly</span><span>${escapeHtml(family.familyName)}</span></header><div class="newspaper-title"><p>Issue ${family.issueNumber} - ${escapeHtml(family.issueDate)}</p><h1>${escapeHtml(family.headline)}</h1><p>Made for ${escapeHtml(family.recipientName)}</p></div>` : `<header class="page-kicker"><span>Family Weekly - ${escapeHtml(family.familyName)} - For ${escapeHtml(family.recipientName)}</span><span>Page ${pageIndex + 1}</span></header>`}
       ${family.openingReply && pageIndex === 0 ? `<blockquote class="reply-note"><strong>A note from ${escapeHtml(family.recipientName)}</strong><p>${escapeHtml(family.openingReply)}</p></blockquote>` : ""}
-      <div class="story-grid">${pageItems.map((item) => `<section class="newspaper-story"><div class="photo-frame newspaper-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}">${item.photoSrc ? "" : "<span>No photo</span>"}</div><div><h2>${escapeHtml(item.headline)}</h2>${item.editedCaption.trim() ? `<p>${escapeHtml(item.editedCaption)}</p>` : ""}<p class="story-meta">${escapeHtml([item.who, item.place, item.date].filter(Boolean).join(" - "))}</p></div></section>`).join("")}</div>
+      <div class="story-grid">${pageItems.map((item) => `<section class="newspaper-story"><div class="photo-frame newspaper-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}">${photoElement(item)}</div><div><h2>${escapeHtml(item.headline)}</h2>${item.editedCaption.trim() ? `<p>${escapeHtml(item.editedCaption)}</p>` : ""}${item.contributorNote?.trim() ? `<p class="contributor-note"><strong>A note from ${escapeHtml(item.contributor)}:</strong> ${escapeHtml(item.contributorNote)}</p>` : ""}<p class="story-meta">${escapeHtml([item.who, item.place, item.date].filter(Boolean).join(" - "))}</p></div></section>`).join("")}</div>
       ${pageItems.length === 0 ? `<div class="quiet-page"><p>A little breathing room this week.</p><p>Fewer stories, never smaller words.</p></div>` : ""}
-      <section class="private-note-space" aria-label="Handwriting space on the printed issue"><h2>Notes for me</h2><p>After printing, handwrite a memory, question, or private note in this space. Nothing written here is stored digitally.</p><div class="note-lines" aria-hidden="true"></div></section>
+      <section class="private-note-space" aria-label="Handwriting space on the printed issue"><h2>Your notes</h2><p>After printing, write a memory or question here. Nothing written here is stored digitally.</p><div class="note-lines" aria-hidden="true"></div></section>
       <footer><span>Private family issue - Local-first prototype</span><span>${pageIndex + 1} / ${pages.length}</span></footer>
     </article>`,
     )
@@ -244,7 +252,7 @@ const builderView = (
       .map((item, index) => builderItem(item, index, family))
       .join("") ||
     '<div class="empty-state"><h3>No selected stories</h3><p>Return to Contributions and change an item from Deferred or Excluded.</p></div>'
-  }</div><div class="preview-wrap"><div class="preview-label"><span>Print preview</span><span>${family.paperSize} · ${family.textSize}pt · 2 pages</span></div>${newspaper(family)}</div></div>
+  }</div><div class="preview-wrap"><div class="preview-label"><span>Print preview</span><span>${family.paperSize} · ${family.textSize}pt · Scroll to see all pages</span></div>${newspaper(family)}</div></div>
 </section>${workflowControls("builder")}`;
 
 const approvalView = (family: FamilyWorkspace): string => {
@@ -335,6 +343,7 @@ const addLocalPhotos = (
       originalFileName: file.name,
       originalCaption: "",
       editedCaption: "",
+      contributorNote: "",
       headline: baseName || "A family moment",
       who: "",
       contributor: family.contributors.find((entry) => entry.id === family.activeContributorId)?.name ?? family.curatorName,
