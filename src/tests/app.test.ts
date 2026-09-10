@@ -13,12 +13,51 @@ describe("Stage 0 application", () => {
     await loadApp();
   });
 
-  it("shows the persistent synthetic-only notice and simulated link", () => {
-    expect(document.body.textContent).toContain("use synthetic content only");
+  it("shows the persistent local-only notice and simulated link", () => {
+    expect(document.body.textContent).toContain(
+      "photos stay in this browser tab",
+    );
     expect(document.body.textContent).toContain(
       "Demonstration link · not active",
     );
     expect(document.body.textContent).toContain("example.invalid");
+  });
+
+  it("replaces sample stories with locally selected photos and optional captions", () => {
+    document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
+    const input = document.querySelector<HTMLInputElement>(
+      "[data-new-photo-input]",
+    )!;
+    expect(input.disabled).toBe(false);
+    const photo = new File(["image bytes"], "Sunday picnic.jpg", {
+      type: "image/jpeg",
+    });
+    Object.defineProperty(input, "files", {
+      configurable: true,
+      value: [photo],
+    });
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+
+    expect(document.querySelectorAll(".contribution-card")).toHaveLength(1);
+    expect(document.body.textContent).toContain("Sunday picnic");
+    expect(
+      document.querySelector<HTMLTextAreaElement>(
+        '[data-item-field="originalCaption"]',
+      )?.value,
+    ).toBe("");
+    expect(URL.createObjectURL).toHaveBeenCalledWith(photo);
+
+    const caption = document.querySelector<HTMLTextAreaElement>(
+      '[data-item-field="originalCaption"]',
+    )!;
+    caption.value = "We finally got everyone together for a picnic.";
+    caption.dispatchEvent(new Event("change", { bubbles: true }));
+    document.querySelector<HTMLElement>('[data-view="builder"]')?.click();
+    expect(
+      document.querySelector<HTMLTextAreaElement>(
+        '[data-item-field="editedCaption"]',
+      )?.value,
+    ).toBe("We finally got everyone together for a picnic.");
   });
 
   it("switches families without leaving the previous identity visible", () => {

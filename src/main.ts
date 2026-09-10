@@ -16,11 +16,7 @@ import {
   type FamilyWorkspace,
   type IssueStatus,
 } from "./model";
-import {
-  createDemoState,
-  demonstrationUrl,
-  syntheticPhotoUrl,
-} from "./synthetic-data";
+import { createDemoState, demonstrationUrl } from "./synthetic-data";
 
 type View = "setup" | "contributions" | "builder" | "approval" | "reply";
 
@@ -67,6 +63,9 @@ const photoStyle = (item: Contribution): string => {
   };
   return `background-image:url('${item.photoSrc}');background-position:${positions[item.photoPosition] ?? "center"}`;
 };
+
+const photoLabel = (item: Contribution): string =>
+  item.who.trim() ? `Photograph of ${item.who}` : "Family photograph";
 
 const familyOptions = (): string =>
   Object.values(state.families)
@@ -159,7 +158,7 @@ const contributionCard = (
   item: Contribution,
   index: number,
 ): string => `<article class="contribution-card" data-item-id="${item.id}">
-  <div class="synthetic-photo" role="img" aria-label="Synthetic demonstration photograph: ${escapeHtml(item.who)}" style="${photoStyle(item)}"></div>
+  <div class="synthetic-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}"></div>
   <div class="contribution-content"><div class="card-heading"><div><span class="item-number">Item ${index + 1}</span><h3>${escapeHtml(item.headline)}</h3></div><span class="status">${item.status}</span></div>
     <label class="field"><span>Headline</span><input data-item-field="headline" value="${escapeHtml(item.headline)}"></label>
     <label class="field"><span>Original caption</span><textarea data-item-field="originalCaption" rows="3">${escapeHtml(item.originalCaption)}</textarea></label>
@@ -181,13 +180,21 @@ const fieldForItem = (
 ): string =>
   `<label class="field"><span>${label}</span><input type="${type}" data-item-field="${name}" data-id="${item.id}" value="${escapeHtml(value)}"></label>`;
 
+const hasOnlySampleContributions = (family: FamilyWorkspace): boolean =>
+  family.contributions.length > 0 &&
+  family.contributions.every((item) => !item.isObjectUrl);
+
+const canChoosePhotos = (family: FamilyWorkspace): boolean =>
+  canAddPhoto(state) &&
+  (selectedItems(family).length < 4 || hasOnlySampleContributions(family));
+
 const contributionsView = (
   family: FamilyWorkspace,
 ): string => `<section class="view-panel" aria-labelledby="view-title">
-  <div class="eyebrow">Part 2 of 5</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Contributions</h2><p class="lede">Review up to four selected items. The second sample intentionally lacks permission.</p></div><div class="count-box"><strong>${selectedItems(family).length}/4</strong><span>selected</span><small>${state.pilotPhotoCount}/50 pilot photos</small></div></div>
-  <div class="callout warning"><strong>Stage 0 safety exercise</strong><span>Find and correct the missing contributor and guardian attestations before approval.</span></div>
+  <div class="eyebrow">Part 2 of 5</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Contributions</h2><p class="lede">Add or review up to four photographs. Captions are optional and always remain editable.</p></div><div class="count-box"><strong>${selectedItems(family).length}/4</strong><span>selected</span><small>${state.pilotPhotoCount}/50 pilot photos</small></div></div>
+  <section class="upload-panel" aria-labelledby="upload-title"><div><div class="eyebrow">Your family moments</div><h3 id="upload-title">Add photos from this device</h3><p>Choose one or more images. They stay in this browser tab, are never uploaded, and disappear when the tab closes.</p></div><label class="upload-control ${canChoosePhotos(family) ? "" : "is-disabled"}"><span>Choose photos</span><input type="file" accept="image/*" multiple data-new-photo-input ${canChoosePhotos(family) ? "" : "disabled"}></label><small>Up to 15 MB per image. ${hasOnlySampleContributions(family) ? "Your first upload replaces the four sample stories." : `${Math.max(0, 4 - selectedItems(family).length)} spaces remain in this issue.`}</small></section>
+  <div class="callout warning"><strong>Permission still comes first</strong><span>Confirm permission—and guardian permission when a minor appears—before approving the issue.</span></div>
   <div class="contribution-list">${family.contributions.map(contributionCard).join("")}</div>
-  <button data-action="add-item" ${selectedItems(family).length >= 4 || !canAddPhoto(state) ? "disabled" : ""}>Add synthetic item</button>
 </section>`;
 
 const builderItem = (
@@ -195,7 +202,7 @@ const builderItem = (
   index: number,
   family: FamilyWorkspace,
 ): string => `<article class="editor-row">
-  <div class="synthetic-photo editor-photo" role="img" aria-label="Synthetic demonstration photograph: ${escapeHtml(item.who)}" style="${photoStyle(item)}"></div>
+  <div class="synthetic-photo editor-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}"></div>
   <div><div class="card-heading"><div><span class="item-number">Story ${index + 1}</span><h3>${escapeHtml(item.headline)}</h3></div><div class="order-buttons"><button class="icon-button" data-action="move-earlier" data-id="${item.id}" aria-label="Move ${escapeHtml(item.headline)} earlier" ${index === 0 ? "disabled" : ""}>↑</button><button class="icon-button" data-action="move-later" data-id="${item.id}" aria-label="Move ${escapeHtml(item.headline)} later" ${index === selectedItems(family).length - 1 ? "disabled" : ""}>↓</button></div></div>
     <div class="comparison"><div><span>Original</span><p>${escapeHtml(item.originalCaption)}</p></div><label><span>Edited caption</span><textarea rows="4" data-item-field="editedCaption" data-id="${item.id}">${escapeHtml(item.editedCaption)}</textarea></label></div>
     ${item.suggestion ? `<div class="suggestion"><span class="eyebrow">Demonstration suggestion</span><p>${escapeHtml(item.suggestion)}</p><div class="button-row"><button data-action="accept-suggestion" data-id="${item.id}">Accept suggestion</button><button class="secondary" data-action="reject-suggestion" data-id="${item.id}">Reject</button></div></div>` : ""}
@@ -213,7 +220,7 @@ const newspaper = (family: FamilyWorkspace): string => {
       ) => `<article class="newspaper-page" aria-label="Page ${pageIndex + 1} of 2">
       ${pageIndex === 0 ? `<header class="masthead"><span>Family Weekly</span><span>${escapeHtml(family.familyName)}</span></header><div class="newspaper-title"><p>Issue ${family.issueNumber} - ${escapeHtml(family.issueDate)}</p><h1>${escapeHtml(family.headline)}</h1><p>Made for ${escapeHtml(family.recipientName)}</p></div>` : `<header class="page-kicker"><span>Family Weekly - ${escapeHtml(family.familyName)} - For ${escapeHtml(family.recipientName)}</span><span>Page 2</span></header>`}
       ${family.openingReply && pageIndex === 0 ? `<blockquote class="reply-note"><strong>A note from ${escapeHtml(family.recipientName)}</strong><p>${escapeHtml(family.openingReply)}</p></blockquote>` : ""}
-      <div class="story-grid">${pageItems.map((item) => `<section class="newspaper-story"><div class="synthetic-photo newspaper-photo" role="img" aria-label="Synthetic demonstration photograph: ${escapeHtml(item.who)}" style="${photoStyle(item)}"></div><div><h2>${escapeHtml(item.headline)}</h2><p>${escapeHtml(item.editedCaption)}</p><p class="story-meta">${escapeHtml([item.who, item.place, item.date].filter(Boolean).join(" - "))}</p></div></section>`).join("")}</div>
+      <div class="story-grid">${pageItems.map((item) => `<section class="newspaper-story"><div class="synthetic-photo newspaper-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}"></div><div><h2>${escapeHtml(item.headline)}</h2>${item.editedCaption.trim() ? `<p>${escapeHtml(item.editedCaption)}</p>` : ""}<p class="story-meta">${escapeHtml([item.who, item.place, item.date].filter(Boolean).join(" - "))}</p></div></section>`).join("")}</div>
       ${pageItems.length === 0 ? `<div class="quiet-page"><p>A little breathing room this week.</p><p>Fewer stories, never smaller words.</p></div>` : ""}
       <section class="private-note-space" aria-label="Private note space"><h2>Notes for me</h2><p>Write a memory, a question, or a note to keep. This space stays private unless you choose to share it.</p><div class="note-lines" aria-hidden="true"></div></section>
       <footer><span>Private family issue - Synthetic Stage 0 content</span><span>${pageIndex + 1} / 2</span></footer>
@@ -265,7 +272,7 @@ const render = (): void => {
     approval: approvalView,
     reply: replyView,
   };
-  app.innerHTML = `<div class="prototype-banner" role="note"><strong>Prototype mode:</strong> use synthetic content only. Nothing is uploaded or saved after this tab closes.</div><div class="app-shell"><header class="app-header"><a class="brand" href="#" data-action="view" data-view="setup" aria-label="Family Weekly home"><span>Family</span> Weekly</a><label class="family-switcher"><span>Active private workspace</span><select id="family-switcher">${familyOptions()}</select></label><div class="issue-status"><span class="${statusClass(family.issueStatus)}">${family.issueStatus}</span><small>Issue ${family.issueNumber}</small></div></header><div class="identity-strip"><div><span>Family</span><strong>${escapeHtml(family.familyName)}</strong></div><div><span>Made for</span><strong>${escapeHtml(family.recipientName)}</strong></div><div class="identity-warning">Never combine family workspaces</div></div>${nav()}<main id="main-content">${views[view](family)}</main><footer class="app-footer"><p>Stage 0 · Synthetic rehearsal · No external integrations</p><div><button class="text-button" data-action="clear-issue">Clear current issue</button><button class="text-button" data-action="reset-family">Reset current family demo</button><button class="text-button danger" data-action="reset-all">Reset all demonstration data</button></div></footer></div><div id="live-status" class="sr-only" role="status" aria-live="polite"></div>`;
+  app.innerHTML = `<div class="prototype-banner" role="note"><strong>Private prototype:</strong> photos stay in this browser tab. Nothing is uploaded or saved after the tab closes.</div><div class="app-shell"><header class="app-header"><a class="brand" href="#" data-action="view" data-view="setup" aria-label="Family Weekly home"><span>Family</span> Weekly</a><label class="family-switcher"><span>Active private workspace</span><select id="family-switcher">${familyOptions()}</select></label><div class="issue-status"><span class="${statusClass(family.issueStatus)}">${family.issueStatus}</span><small>Issue ${family.issueNumber}</small></div></header><div class="identity-strip"><div><span>Family</span><strong>${escapeHtml(family.familyName)}</strong></div><div><span>Made for</span><strong>${escapeHtml(family.recipientName)}</strong></div><div class="identity-warning">Never combine family workspaces</div></div>${nav()}<main id="main-content">${views[view](family)}</main><footer class="app-footer"><p>Local-first prototype · Sample or personal photos · No external integrations</p><div><button class="text-button" data-action="clear-issue">Clear current issue</button><button class="text-button" data-action="reset-family">Reset current family demo</button><button class="text-button danger" data-action="reset-all">Reset all demonstration data</button></div></footer></div><div id="live-status" class="sr-only" role="status" aria-live="polite"></div>`;
 };
 
 const getItem = (id: string): Contribution | undefined =>
@@ -280,27 +287,52 @@ const moveItem = (id: string, direction: -1 | 1): void => {
   invalidateApproval(activeFamily());
 };
 
-const addSyntheticItem = (): void => {
+const MAX_LOCAL_IMAGE_BYTES = 15 * 1024 * 1024;
+
+const addLocalPhotos = (
+  files: FileList,
+): { added: number; rejected: number } => {
   const family = activeFamily();
-  if (!canAddPhoto(state) || selectedItems(family).length >= 4) return;
-  const number = Date.now();
-  family.contributions.push({
-    id: `${family.id}-new-${number}`,
-    photoSrc: syntheticPhotoUrl,
-    photoPosition: "bottom right",
-    originalCaption:
-      "A new synthetic family moment, ready for a human-written caption.",
-    editedCaption:
-      "A new synthetic family moment, ready for a human-written caption.",
-    headline: "A new family moment",
-    who: "Fictional family members",
-    contributor: family.curatorName,
-    permission: false,
-    showsMinor: false,
-    guardianPermission: false,
-    status: "Draft",
+  const chosenFiles = Array.from(files);
+  const validFiles = chosenFiles.filter(
+    (file) =>
+      file.type.startsWith("image/") && file.size <= MAX_LOCAL_IMAGE_BYTES,
+  );
+  let rejected = chosenFiles.length - validFiles.length;
+  if (
+    validFiles.length > 0 &&
+    canAddPhoto(state) &&
+    hasOnlySampleContributions(family)
+  ) {
+    family.contributions = [];
+  }
+  let added = 0;
+  validFiles.forEach((file, index) => {
+    if (!canAddPhoto(state) || selectedItems(family).length >= 4) {
+      rejected += 1;
+      return;
+    }
+    const baseName = file.name.replace(/\.[^.]+$/, "").trim();
+    family.contributions.push({
+      id: `${family.id}-local-${Date.now()}-${index}`,
+      photoSrc: URL.createObjectURL(file),
+      photoPosition: "center",
+      isObjectUrl: true,
+      originalCaption: "",
+      editedCaption: "",
+      headline: baseName || "A family moment",
+      who: "",
+      contributor: family.curatorName,
+      permission: false,
+      showsMinor: false,
+      guardianPermission: false,
+      status: "Draft",
+    });
+    state.pilotPhotoCount += 1;
+    added += 1;
   });
-  state.pilotPhotoCount += 1;
+  if (added) invalidateApproval(family);
+  return { added, rejected };
 };
 
 const confirmReset = (message: string): boolean => window.confirm(message);
@@ -333,7 +365,6 @@ app.addEventListener("click", async (event) => {
     item.status = "Deferred";
     invalidateApproval(family);
   }
-  if (action === "add-item") addSyntheticItem();
   if (action === "suggest" && item)
     item.suggestion = assistant.suggest(item.originalCaption)?.text;
   if (action === "accept-suggestion" && item?.suggestion) {
@@ -514,7 +545,16 @@ app.addEventListener("change", (event) => {
       input instanceof HTMLInputElement && input.type === "checkbox"
         ? input.checked
         : input.value;
+    const previousOriginalCaption = item.originalCaption;
     (item as unknown as Record<string, unknown>)[key] = value;
+    if (
+      key === "originalCaption" &&
+      typeof value === "string" &&
+      (!item.editedCaption.trim() ||
+        item.editedCaption === previousOriginalCaption)
+    ) {
+      item.editedCaption = value;
+    }
     invalidateApproval(family);
     render();
     return;
@@ -532,6 +572,20 @@ app.addEventListener("change", (event) => {
       render();
       announce("Local image replaced in browser memory only.");
     }
+    return;
+  }
+  if (input.dataset.newPhotoInput !== undefined) {
+    const files = (input as HTMLInputElement).files;
+    if (!files?.length) return;
+    const { added, rejected } = addLocalPhotos(files);
+    render();
+    announce(
+      `${added} ${added === 1 ? "photo" : "photos"} added in browser memory.${
+        rejected
+          ? ` ${rejected} could not be added because of the issue limit, pilot limit, file type, or 15 MB size limit.`
+          : ""
+      }`,
+    );
     return;
   }
   if (input.dataset.replyField) {

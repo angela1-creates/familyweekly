@@ -44,6 +44,8 @@ Use invented content only. Produce one complete sample issue and run it through 
 
 Test at least three failures: an unapproved submission, content placed in the wrong family workspace, and an AI edit that changes a caption's meaning. The rehearsal passes when Angela can detect and correct all three without publishing or retaining the wrong material.
 
+The local-first web prototype also permits an owner-operated photo-selection rehearsal on a trusted device. A person may choose up to four local images and add captions only if they want to. The images remain in browser memory, are not uploaded or persisted, and are removed when the issue is cleared or the tab closes. This does not create a contributor submission channel and does not remove any Stage 1 consent, security, or access-control requirement.
+
 ### Stage 1: three-family pilot
 
 - Three families.
@@ -186,4 +188,4 @@ Before expanding, review every correction, missed issue, consent question, deliv
 
 If connection improves but the phone action does not, revise the supported action before scaling. If the action improves but connection does not, revise the family content and response loop. If neither improves, stop. A larger pilot would only reproduce an unproven service.
 
-The next real-world action is Stage 0: make one invented issue and walk it through the entire service, including a simulated wrong-family placement and full deletion. Do not build the application until that rehearsal confirms the five-part tool is the smallest workflow Angela actually needs.
+The next real-world action is to complete the Stage 0 rehearsal with one invented issue, including a simulated wrong-family placement and full deletion. Then test the local photo-selection path on a trusted device, confirm that captions can be omitted without harming the printed layout, and verify that clearing or closing the tab removes every temporary image before beginning any Stage 1 submission work.
