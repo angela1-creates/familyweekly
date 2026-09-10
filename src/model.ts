@@ -28,6 +28,7 @@ export interface Contribution {
   originalFileName?: string;
   originalCaption: string;
   editedCaption: string;
+  contributorNote?: string;
   headline: string;
   who: string;
   date?: string;

@@ -512,6 +512,12 @@ code {
   font-size: .85rem;
   font-weight: 700;
 }
+.photo-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .photo-remove {
   position: absolute;
   top: .55rem;
@@ -643,6 +649,7 @@ code {
 .preview-wrap {
   position: sticky;
   top: 4rem;
+  max-height: calc(100vh - 6rem);
   overflow: auto;
   padding: 1rem;
   background: #d6cec3;
@@ -725,32 +732,44 @@ code {
 }
 .newspaper-story {
   display: grid;
-  grid-template-columns: 42% 1fr;
+  grid-template-columns: 1fr;
   gap: 0.18in;
-  min-height: 3.35in;
+  min-height: 2.05in;
   padding-bottom: 0.15in;
   border-bottom: 1px solid #928579;
   break-inside: avoid;
 }
 .newspaper-photo {
-  min-height: 2.6in;
-  max-height: 3.1in;
+  min-height: 3.2in;
+  max-height: 3.5in;
 }
 .newspaper-story h2 {
-  margin: 0 0 0.1in;
+  display: none;
   font:
-    800 20pt/1.05 Georgia,
+    800 17pt/1.05 Georgia,
     serif;
 }
 .newspaper-story p {
   margin: 0;
   font-size: var(--body-size);
   line-height: 1.35;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 .newspaper-story .story-meta {
   margin-top: 0.12in;
   font-size: 9.5pt;
   font-weight: 750;
+}
+.newspaper-story .story-meta {
+  display: none;
+}
+.contributor-note {
+  margin-top: .12in !important;
+  font-size: .9em !important;
+  font-style: italic;
 }
 .reply-note {
   margin: 0 0 0.15in;
@@ -779,7 +798,7 @@ code {
   font-size: 0.85em;
 }
 .note-lines {
-  min-height: 6rem;
+  min-height: 3rem;
   background: repeating-linear-gradient(
     to bottom,
     transparent 0,
