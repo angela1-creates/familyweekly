@@ -74,6 +74,33 @@ describe("Stage 0 application", () => {
     ).not.toContain("Rivera Family");
   });
 
+  it("keeps setup focused and moves optional choices to their point of use", () => {
+    expect(document.querySelectorAll("[data-family-field]")).toHaveLength(3);
+    expect(
+      document.querySelector('[data-family-field="issueDate"]'),
+    ).toBeNull();
+    expect(
+      document.querySelector('[data-family-field="issueNumber"]'),
+    ).toBeNull();
+    expect(document.querySelector('[data-family-field="channel"]')).toBeNull();
+    expect(
+      document.querySelector('[data-family-field="approvalLevel"]'),
+    ).toBeNull();
+    expect(document.body.textContent).toContain("Photo cutoff");
+
+    document.querySelector<HTMLElement>('[data-view="builder"]')?.click();
+    expect(
+      document.querySelector('[data-family-field="paperSize"]'),
+    ).not.toBeNull();
+    expect(
+      document.querySelector('[data-family-field="textSize"]'),
+    ).not.toBeNull();
+    document.querySelector<HTMLElement>('[data-view="approval"]')?.click();
+    expect(
+      document.querySelector('[data-family-field="deliveryMethod"]'),
+    ).not.toBeNull();
+  });
+
   it("renders print controls disabled before curator approval", () => {
     document.querySelector<HTMLElement>('[data-view="approval"]')?.click();
     const print = document.querySelector<HTMLButtonElement>(
@@ -142,6 +169,12 @@ describe("Stage 0 application", () => {
     sendPreview.click();
     document.querySelector<HTMLElement>('[data-action="approve"]')?.click();
     expect(document.body.textContent).toContain("Approved");
+    document
+      .querySelector<HTMLElement>('[data-action="preauthorize-future"]')
+      ?.click();
+    expect(document.body.textContent).toContain(
+      "Curator previews may be skipped",
+    );
     document.querySelector<HTMLElement>('[data-action="print"]')?.click();
     expect(window.print).toHaveBeenCalledOnce();
     document.querySelector<HTMLElement>('[data-action="mark-sent"]')?.click();

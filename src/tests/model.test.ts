@@ -5,7 +5,9 @@ import {
   canPrint,
   clearIssue,
   invalidateApproval,
+  issueCutoffDate,
   issueNeedsApproval,
+  nextIssueDate,
   replacePhoto,
   replyForNextIssue,
   selectedItems,
@@ -72,14 +74,29 @@ describe("issue rules", () => {
     expect(canPrint(family)).toBe(true);
   });
 
-  it("requires the first issue, but allows later preauthorized issues", () => {
+  it("respects an explicit standing preauthorization", () => {
     const family = createDemoState().families["demo-b"];
     expect(issueNeedsApproval(family)).toBe(true);
-    family.issueNumber = 2;
     family.approvalLevel = "Preauthorized";
     expect(issueNeedsApproval(family)).toBe(false);
     family.approvalLevel = "Approval required";
     expect(issueNeedsApproval(family)).toBe(true);
+  });
+
+  it("schedules Sunday issues using the Wednesday cutoff", () => {
+    expect(nextIssueDate(new Date(2026, 8, 9, 23, 59))).toBe("2026-09-13");
+    expect(nextIssueDate(new Date(2026, 8, 10, 0, 0))).toBe("2026-09-20");
+    expect(nextIssueDate(new Date(2026, 8, 13, 9, 0))).toBe("2026-09-20");
+    expect(issueCutoffDate("2026-09-20")).toBe("2026-09-16");
+  });
+
+  it("uses accessible print and handoff defaults", () => {
+    Object.values(createDemoState().families).forEach((family) => {
+      expect(family.paperSize).toBe("Letter");
+      expect(family.textSize).toBe(18);
+      expect(family.deliveryMethod).toBe("Family handoff");
+      expect(family.channel).toBe("manual");
+    });
   });
 
   it("keeps family contribution records separate", () => {

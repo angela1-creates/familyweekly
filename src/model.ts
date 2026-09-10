@@ -110,7 +110,36 @@ export const canPrint = (family: FamilyWorkspace): boolean =>
   family.issueStatus === "Approved";
 
 export const issueNeedsApproval = (family: FamilyWorkspace): boolean =>
-  family.issueNumber === 1 || family.approvalLevel === "Approval required";
+  family.approvalLevel !== "Preauthorized";
+
+const localDateString = (date: Date): string =>
+  [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+
+const parseLocalDate = (value: string): Date => {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+export const nextIssueDate = (now = new Date()): string => {
+  const day = now.getDay();
+  const daysUntilIssue = day <= 3 ? 7 - day : 14 - day;
+  const issueDate = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + daysUntilIssue,
+  );
+  return localDateString(issueDate);
+};
+
+export const issueCutoffDate = (issueDate: string): string => {
+  const cutoff = parseLocalDate(issueDate);
+  cutoff.setDate(cutoff.getDate() - 4);
+  return localDateString(cutoff);
+};
 
 export const canAddPhoto = (state: DemoState): boolean =>
   state.pilotPhotoCount < 50;

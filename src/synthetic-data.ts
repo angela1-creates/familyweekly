@@ -1,8 +1,9 @@
-import type {
-  Contribution,
-  DemoState,
-  FamilyId,
-  FamilyWorkspace,
+import {
+  nextIssueDate,
+  type Contribution,
+  type DemoState,
+  type FamilyId,
+  type FamilyWorkspace,
 } from "./model";
 
 export const syntheticPhotoUrl = `${import.meta.env.BASE_URL}synthetic/family-moments.png`;
@@ -105,8 +106,6 @@ const makeFamily = (
   recipientName: string,
   curatorName: string,
   language: string,
-  channel: FamilyWorkspace["channel"],
-  deliveryMethod: FamilyWorkspace["deliveryMethod"],
   missingPermission = false,
 ): FamilyWorkspace => ({
   id,
@@ -114,11 +113,11 @@ const makeFamily = (
   recipientName,
   curatorName,
   language,
-  textSize: id === "demo-b" ? 20 : id === "demo-c" ? 18 : 16,
+  textSize: 18,
   paperSize: "Letter",
-  deliveryMethod,
-  channel,
-  issueDate: "2026-09-14",
+  deliveryMethod: "Family handoff",
+  channel: "manual",
+  issueDate: nextIssueDate(),
   issueNumber: 1,
   issueStatus: "Draft",
   approvalLevel: "Approval required",
@@ -137,8 +136,6 @@ export const createDemoState = (): DemoState => ({
       "Nana Rosa",
       "Elena Rivera",
       "English and Spanish",
-      "whatsapp",
-      "Family handoff",
       true,
     ),
     "demo-b": makeFamily(
@@ -147,8 +144,6 @@ export const createDemoState = (): DemoState => ({
       "Dadaji",
       "Nikhil Patel",
       "English",
-      "imessage",
-      "Local mail",
     ),
     "demo-c": makeFamily(
       "demo-c",
@@ -156,8 +151,6 @@ export const createDemoState = (): DemoState => ({
       "Grandma Lin",
       "Mei Chen",
       "Chinese and English",
-      "wechat",
-      "Senior-center handoff",
     ),
   },
 });
