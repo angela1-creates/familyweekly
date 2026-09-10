@@ -60,18 +60,14 @@ describe("Stage 0 application", () => {
     ).toBe("We finally got everyone together for a picnic.");
   });
 
-  it("switches families without leaving the previous identity visible", () => {
-    const select =
-      document.querySelector<HTMLSelectElement>("#family-switcher")!;
+  it("shows one private family context without a demo workspace switcher", () => {
+    expect(document.querySelector("#family-switcher")).toBeNull();
     expect(document.body.textContent).toContain("Rivera Family");
-    select.value = "demo-b";
-    select.dispatchEvent(new Event("change", { bubbles: true }));
     expect(document.querySelector(".identity-strip")?.textContent).toContain(
-      "Patel Family",
+      "Nana Rosa",
     );
-    expect(
-      document.querySelector(".identity-strip")?.textContent,
-    ).not.toContain("Rivera Family");
+    expect(document.body.textContent).not.toContain("Stage 0 guided rehearsal");
+    expect(document.body.textContent).not.toContain("14 steps");
   });
 
   it("keeps setup focused and moves optional choices to their point of use", () => {
@@ -107,6 +103,14 @@ describe("Stage 0 application", () => {
       '[data-action="print"]',
     );
     expect(print?.disabled).toBe(true);
+    const approve = document.querySelector<HTMLButtonElement>(
+      '[data-action="approve"]',
+    )!;
+    expect(approve.disabled).toBe(false);
+    approve.click();
+    expect(document.querySelector("#live-status")?.textContent).toContain(
+      "Cannot approve yet",
+    );
   });
 
   it("contains no persistent storage or external request calls", async () => {
@@ -162,13 +166,15 @@ describe("Stage 0 application", () => {
       ?.click();
 
     document.querySelector<HTMLElement>('[data-view="approval"]')?.click();
-    const sendPreview = document.querySelector<HTMLButtonElement>(
-      '[data-action="send-preview"]',
+    const approve = document.querySelector<HTMLButtonElement>(
+      '[data-action="approve"]',
     )!;
-    expect(sendPreview.disabled).toBe(false);
-    sendPreview.click();
-    document.querySelector<HTMLElement>('[data-action="approve"]')?.click();
+    expect(approve.disabled).toBe(false);
+    approve.click();
     expect(document.body.textContent).toContain("Approved");
+    expect(document.querySelector(".app-header .status")?.textContent).toBe(
+      "Ready to print",
+    );
     document
       .querySelector<HTMLElement>('[data-action="preauthorize-future"]')
       ?.click();
