@@ -117,6 +117,20 @@ const nav = (): string => {
     .join("")}</nav>`;
 };
 
+const workflowControls = (current: View): string => {
+  const steps: View[] = ["setup", "contributions", "builder", "approval"];
+  const index = steps.indexOf(current);
+  const previous = index > 0 ? steps[index - 1] : undefined;
+  const next = index < steps.length - 1 ? steps[index + 1] : undefined;
+  const labels: Record<View, string> = {
+    setup: "Family setup",
+    contributions: "Contributions",
+    builder: "Issue builder",
+    approval: "Approve & deliver",
+  };
+  return `<div class="workflow-controls" aria-label="Continue through workflow">${previous ? `<button class="secondary" data-action="view" data-view="${previous}">Back to ${labels[previous]}</button>` : ""}${next ? `<button data-action="view" data-view="${next}">Next: ${labels[next]} <span aria-hidden="true">→</span></button>` : `<span class="workflow-complete">Final step: approve, print, and deliver</span>`}</div>`;
+};
+
 const field = (
   label: string,
   name: string,
@@ -138,6 +152,7 @@ const setupView = (family: FamilyWorkspace): string => {
     </div>
     <section class="share-panel schedule-summary" aria-label="Automatic issue schedule"><div><span class="eyebrow">Issue ${family.issueNumber}</span><h3>${formatDate(family.issueDate)}</h3><small>Publication date</small></div><div><span class="eyebrow">Photo cutoff</span><h3>${formatDate(cutoffDate)}</h3><small>After Wednesday, photos move to the following Sunday.</small></div></section>
     <section class="share-panel contributor-invites" aria-labelledby="contributors-title"><div class="section-heading"><div><span class="eyebrow">Persistent family circle</span><h3 id="contributors-title">Invite contributors once</h3><p>Each person gets a private link they can reuse for every weekly issue. The organizer owns the family circle and cannot be revoked.</p></div><button data-action="invite-contributor">Add contributor</button></div><div class="invite-list">${family.contributors.map((contributor) => `<div class="invite-row ${contributor.active ? "" : "is-revoked"}"><div><strong>${escapeHtml(contributor.name)}</strong><small>${contributor.role === "curator" ? "Organizer · permanent member" : contributor.active ? "Active member" : "Revoked"}</small></div><div class="invite-actions">${contributor.role === "curator" ? "" : contributor.active ? `<button class="secondary" data-action="share-contributor" data-contributor-id="${contributor.id}">Share link</button><button class="text-button danger" data-action="revoke-contributor" data-contributor-id="${contributor.id}">Revoke</button>` : `<button class="secondary" data-action="restore-contributor" data-contributor-id="${contributor.id}">Restore</button>`}</div></div>`).join("")}</div></section>
+    ${workflowControls("setup")}
   </section>`;
 };
 
@@ -180,6 +195,7 @@ const contributionsView = (
   <div class="eyebrow">Part 2 of 4</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Contributions</h2><p class="lede">Contributors may submit up to four photos each. Select up to ${MAX_ISSUE_ITEMS} stories for this issue; captions remain editable.</p></div><div class="count-box"><strong>${selectedItems(family).length}/${MAX_ISSUE_ITEMS}</strong><span>selected</span><small>${state.pilotPhotoCount}/50 pilot photos</small></div></div>
   <section class="upload-panel" aria-labelledby="upload-title"><div><div class="eyebrow">Your family moments</div><h3 id="upload-title">Add up to four photos</h3><p>Select several images at once when your device allows it. If the picker only accepts one, choose this button again to add the rest. Photos stay in this browser tab and are never uploaded.</p></div><label class="field"><span>Submitting as</span><select data-family-field="activeContributorId">${family.contributors.filter((contributor) => contributor.active).map((contributor) => `<option value="${contributor.id}" ${family.activeContributorId === contributor.id ? "selected" : ""}>${escapeHtml(contributor.name)}</option>`).join("")}</select></label><label class="upload-control ${canChoosePhotos(family) ? "" : "is-disabled"}"><span>Choose photos</span><input type="file" accept="image/*" multiple data-new-photo-input ${canChoosePhotos(family) ? "" : "disabled"}></label><small>Up to 4 photos per contributor. The organizer selects up to 16 stories for the printed issue.</small></section>
   <div class="contribution-list">${family.contributions.filter((item) => item.photoSrc).map(contributionCard).join("") || `<div class="empty-state"><h3>No photos added yet</h3><p>Choose up to four photos above. Your selected photos will appear here for captions and permission.</p></div>`}</div>
+  ${workflowControls("contributions")}
 </section>`;
 
 const builderItem = (
@@ -229,7 +245,7 @@ const builderView = (
       .join("") ||
     '<div class="empty-state"><h3>No selected stories</h3><p>Return to Contributions and change an item from Deferred or Excluded.</p></div>'
   }</div><div class="preview-wrap"><div class="preview-label"><span>Print preview</span><span>${family.paperSize} · ${family.textSize}pt · 2 pages</span></div>${newspaper(family)}</div></div>
-</section>`;
+</section>${workflowControls("builder")}`;
 
 const approvalView = (family: FamilyWorkspace): string => {
   const errors = approvalErrors(family);
@@ -242,7 +258,7 @@ const approvalView = (family: FamilyWorkspace): string => {
   ].includes(family.issueStatus);
   return `<section class="view-panel" aria-labelledby="view-title"><div class="eyebrow">Part 4 of 4</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Approval, print & delivery</h2><p class="lede">Photo permissions are always required. Curator preview can be skipped only for routine issues with a standing preference.</p></div><span class="${statusClass(family.issueStatus)}">${family.issueStatus}</span></div>
   ${errors.length ? `<div class="validation-summary" role="alert" tabindex="-1"><h3>Complete these checks</h3><ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul><button class="secondary" data-action="view" data-view="contributions">Go to Step 2 photo permissions</button></div>` : `<div class="callout success"><strong>${needsPreview ? "Ready for organizer review" : "Ready under the standing preference"}</strong><span>All required identity and photo-permission checks pass.</span></div>`}
-  <div class="approval-layout"><div class="approval-actions"><section><span class="eyebrow">Organizer review</span><h3>${escapeHtml(family.curatorName)}</h3><p>${errors.length ? "Use the checklist above to finish photo permissions, then approve here." : needsPreview ? "The complete issue is visible beside this panel. The family organizer can approve it when ready." : "This routine issue can be approved under the standing preference."}</p><div class="button-stack"><button data-action="approve" ${approvalRecorded ? "disabled" : ""}>${approvalRecorded ? "Approval recorded" : needsPreview ? "Approve issue" : "Approve routine issue"}</button><button class="secondary" data-action="request-changes">Request changes</button><button class="text-button" data-action="skip-issue">Skip this issue</button></div>${family.issueNumber === 1 && approvalRecorded ? `<div class="standing-preference"><strong>Future routine issues</strong><p>${family.approvalLevel === "Preauthorized" ? "Organizer previews may be skipped when all permissions are complete." : "Organizer review is still required for every issue."}</p>${family.approvalLevel === "Preauthorized" ? "" : `<button class="secondary" data-action="preauthorize-future">Allow routine issues without another preview</button>`}</div>` : ""}</section><section><span class="eyebrow">Print & handoff</span><label class="field"><span>Delivery method</span><select data-family-field="deliveryMethod">${["Family handoff", "Senior-center handoff", "Local mail"].map((option) => `<option ${family.deliveryMethod === option ? "selected" : ""}>${option}</option>`).join("")}</select></label><div class="button-stack"><button data-action="print" ${canPrint(family) ? "" : "disabled"}>Open browser print</button><button class="secondary" data-action="mark-sent" ${family.issueStatus !== "Printed" ? "disabled" : ""}>Record sent or handed off</button><button class="secondary" data-action="mark-received" ${family.issueStatus !== "Sent or handed off" ? "disabled" : ""}>Record received (optional)</button></div><p class="fine-print">Received is a voluntary delivery note. It is not engagement, wellbeing, or relationship data.</p></section></div><div class="mini-preview">${newspaper(family)}</div></div></section>`;
+  <div class="approval-layout"><div class="approval-actions"><section><span class="eyebrow">Organizer review</span><h3>${escapeHtml(family.curatorName)}</h3><p>${errors.length ? "Use the checklist above to finish photo permissions, then approve here." : needsPreview ? "The complete issue is visible beside this panel. The family organizer can approve it when ready." : "This routine issue can be approved under the standing preference."}</p><div class="button-stack"><button data-action="approve" ${approvalRecorded ? "disabled" : ""}>${approvalRecorded ? "Approval recorded" : needsPreview ? "Approve issue" : "Approve routine issue"}</button><button class="secondary" data-action="request-changes">Request changes</button><button class="text-button" data-action="skip-issue">Skip this issue</button></div>${family.issueNumber === 1 && approvalRecorded ? `<div class="standing-preference"><strong>Future routine issues</strong><p>${family.approvalLevel === "Preauthorized" ? "Organizer previews may be skipped when all permissions are complete." : "Organizer review is still required for every issue."}</p>${family.approvalLevel === "Preauthorized" ? "" : `<button class="secondary" data-action="preauthorize-future">Allow routine issues without another preview</button>`}</div>` : ""}</section><section><span class="eyebrow">Print & handoff</span><label class="field"><span>Delivery method</span><select data-family-field="deliveryMethod">${["Family handoff", "Senior-center handoff", "Local mail"].map((option) => `<option ${family.deliveryMethod === option ? "selected" : ""}>${option}</option>`).join("")}</select></label><div class="button-stack"><button data-action="print" ${canPrint(family) ? "" : "disabled"}>Open browser print</button><button class="secondary" data-action="mark-sent" ${family.issueStatus !== "Printed" ? "disabled" : ""}>Record sent or handed off</button><button class="secondary" data-action="mark-received" ${family.issueStatus !== "Sent or handed off" ? "disabled" : ""}>Record received (optional)</button></div><p class="fine-print">Received is a voluntary delivery note. It is not engagement, wellbeing, or relationship data.</p></section></div><div class="mini-preview">${newspaper(family)}</div></div>${workflowControls("approval")}</section>`;
 };
 
 const render = (): void => {

@@ -428,6 +428,26 @@ code {
 .invite-row.is-revoked {
   opacity: .65;
 }
+
+.workflow-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.workflow-controls button:last-child {
+  margin-left: auto;
+}
+
+.workflow-complete {
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: 700;
+}
 .upload-panel h3,
 .upload-panel p {
   margin: 0.25rem 0;
