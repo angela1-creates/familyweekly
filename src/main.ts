@@ -13,7 +13,6 @@ import {
   replyForNextIssue,
   selectedItems,
   type Contribution,
-  type FamilyId,
   type FamilyWorkspace,
   type IssueStatus,
 } from "./model";
@@ -62,6 +61,9 @@ const focusView = (): void => {
 const statusClass = (status: IssueStatus): string =>
   `status status-${status.toLowerCase().replaceAll(" ", "-").replaceAll("/", "-")}`;
 
+const statusLabel = (status: IssueStatus): string =>
+  status === "Approved" ? "Ready to print" : status;
+
 const photoStyle = (item: Contribution): string => {
   if (item.isObjectUrl)
     return `background-image:url('${item.photoSrc}');background-size:cover;background-position:center`;
@@ -77,14 +79,6 @@ const photoStyle = (item: Contribution): string => {
 const photoLabel = (item: Contribution): string =>
   item.who.trim() ? `Photograph of ${item.who}` : "Family photograph";
 
-const familyOptions = (): string =>
-  Object.values(state.families)
-    .map(
-      (family) =>
-        `<option value="${family.id}" ${family.id === state.activeFamilyId ? "selected" : ""}>${escapeHtml(family.familyName)} · ${escapeHtml(family.recipientName)}</option>`,
-    )
-    .join("");
-
 const nav = (): string => {
   const items: Array<[View, string, string]> = [
     ["setup", "1", "Family setup"],
@@ -98,9 +92,7 @@ const nav = (): string => {
       ([id, number, label]) =>
         `<button class="workflow-step ${view === id ? "is-current" : ""}" data-action="view" data-view="${id}" aria-current="${view === id ? "step" : "false"}"><span>${number}</span>${label}</button>`,
     )
-    .join(
-      "",
-    )}</nav><details class="demo-guide"><summary><span>Stage 0 guided rehearsal</span><strong>14 steps</strong></summary><ol><li>Choose one fictional family.</li><li>Review four sample submissions.</li><li>Find the missing permission.</li><li>Correct the contributor and guardian attestations.</li><li>Request a demonstration caption suggestion.</li><li>Accept, modify, or reject it.</li><li>Arrange the issue with buttons.</li><li>Send the simulated curator preview.</li><li>Approve the issue.</li><li>Open browser print.</li><li>Record a simulated delivery status.</li><li>Record an approved recipient reply.</li><li>Start the next issue with that reply.</li><li>Clear all demonstration data.</li></ol></details>`;
+    .join("")}</nav>`;
 };
 
 const field = (
@@ -233,9 +225,15 @@ const builderView = (
 const approvalView = (family: FamilyWorkspace): string => {
   const errors = approvalErrors(family);
   const needsPreview = issueNeedsApproval(family);
+  const approvalRecorded = [
+    "Approved",
+    "Printed",
+    "Sent or handed off",
+    "Received",
+  ].includes(family.issueStatus);
   return `<section class="view-panel" aria-labelledby="view-title"><div class="eyebrow">Part 4 of 5</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Approval, print & delivery</h2><p class="lede">Photo permissions are always required. Curator preview can be skipped only for routine issues with a standing preference.</p></div><span class="${statusClass(family.issueStatus)}">${family.issueStatus}</span></div>
   ${errors.length ? `<div class="validation-summary" role="alert" tabindex="-1"><h3>Complete these checks</h3><ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul></div>` : `<div class="callout success"><strong>${needsPreview ? "Ready for curator preview" : "Ready under the standing preference"}</strong><span>All required identity and photo-permission checks pass.</span></div>`}
-  <div class="approval-layout"><div class="approval-actions"><section><span class="eyebrow">Curator review</span><h3>${escapeHtml(family.curatorName)}</h3><p>${needsPreview ? "Prepare the preview, then record the curator's decision." : "This routine issue can be approved without another preview."}</p><div class="button-stack"><button data-action="send-preview" ${errors.length ? "disabled" : ""}>${needsPreview ? "Prepare curator preview" : "Approve routine issue"}</button><button data-action="approve" ${errors.length || !["Awaiting curator approval", "Changes requested"].includes(family.issueStatus) ? "disabled" : ""}>Approve issue</button><button class="secondary" data-action="request-changes">Request changes</button><button class="text-button" data-action="skip-issue">Skip this issue</button></div>${family.issueNumber === 1 && ["Approved", "Printed", "Sent or handed off", "Received"].includes(family.issueStatus) ? `<div class="standing-preference"><strong>Future routine issues</strong><p>${family.approvalLevel === "Preauthorized" ? "Curator previews may be skipped when all permissions are complete." : "Curator review is still required for every issue."}</p>${family.approvalLevel === "Preauthorized" ? "" : `<button class="secondary" data-action="preauthorize-future">Allow routine issues without another preview</button>`}</div>` : ""}</section><section><span class="eyebrow">Print & handoff</span><label class="field"><span>Delivery method</span><select data-family-field="deliveryMethod">${["Family handoff", "Senior-center handoff", "Local mail"].map((option) => `<option ${family.deliveryMethod === option ? "selected" : ""}>${option}</option>`).join("")}</select></label><div class="button-stack"><button data-action="print" ${canPrint(family) ? "" : "disabled"}>Open browser print</button><button class="secondary" data-action="mark-sent" ${family.issueStatus !== "Printed" ? "disabled" : ""}>Record sent or handed off</button><button class="secondary" data-action="mark-received" ${family.issueStatus !== "Sent or handed off" ? "disabled" : ""}>Record received (optional)</button></div><p class="fine-print">Received is a voluntary delivery note. It is not engagement, wellbeing, or relationship data.</p></section></div><div class="mini-preview">${newspaper(family)}</div></div></section>`;
+  <div class="approval-layout"><div class="approval-actions"><section><span class="eyebrow">Curator review</span><h3>${escapeHtml(family.curatorName)}</h3><p>${errors.length ? "Use the checklist above to finish photo permissions, then approve here." : needsPreview ? "The complete issue is visible beside this panel. Record the curator's approval when ready." : "This routine issue can be approved under the standing preference."}</p><div class="button-stack"><button data-action="approve" ${approvalRecorded ? "disabled" : ""}>${approvalRecorded ? "Approval recorded" : needsPreview ? "Approve issue" : "Approve routine issue"}</button><button class="secondary" data-action="request-changes">Request changes</button><button class="text-button" data-action="skip-issue">Skip this issue</button></div>${family.issueNumber === 1 && approvalRecorded ? `<div class="standing-preference"><strong>Future routine issues</strong><p>${family.approvalLevel === "Preauthorized" ? "Curator previews may be skipped when all permissions are complete." : "Curator review is still required for every issue."}</p>${family.approvalLevel === "Preauthorized" ? "" : `<button class="secondary" data-action="preauthorize-future">Allow routine issues without another preview</button>`}</div>` : ""}</section><section><span class="eyebrow">Print & handoff</span><label class="field"><span>Delivery method</span><select data-family-field="deliveryMethod">${["Family handoff", "Senior-center handoff", "Local mail"].map((option) => `<option ${family.deliveryMethod === option ? "selected" : ""}>${option}</option>`).join("")}</select></label><div class="button-stack"><button data-action="print" ${canPrint(family) ? "" : "disabled"}>Open browser print</button><button class="secondary" data-action="mark-sent" ${family.issueStatus !== "Printed" ? "disabled" : ""}>Record sent or handed off</button><button class="secondary" data-action="mark-received" ${family.issueStatus !== "Sent or handed off" ? "disabled" : ""}>Record received (optional)</button></div><p class="fine-print">Received is a voluntary delivery note. It is not engagement, wellbeing, or relationship data.</p></section></div><div class="mini-preview">${newspaper(family)}</div></div></section>`;
 };
 
 const replyView = (family: FamilyWorkspace): string => {
@@ -261,7 +259,7 @@ const render = (): void => {
     approval: approvalView,
     reply: replyView,
   };
-  app.innerHTML = `<div class="prototype-banner" role="note"><strong>Private prototype:</strong> photos stay in this browser tab. Nothing is uploaded or saved after the tab closes.</div><div class="app-shell"><header class="app-header"><a class="brand" href="#" data-action="view" data-view="setup" aria-label="Family Weekly home"><span>Family</span> Weekly</a><label class="family-switcher"><span>Active private workspace</span><select id="family-switcher">${familyOptions()}</select></label><div class="issue-status"><span class="${statusClass(family.issueStatus)}">${family.issueStatus}</span><small>Issue ${family.issueNumber}</small></div></header><div class="identity-strip"><div><span>Family</span><strong>${escapeHtml(family.familyName)}</strong></div><div><span>Made for</span><strong>${escapeHtml(family.recipientName)}</strong></div><div class="identity-warning">Never combine family workspaces</div></div>${nav()}<main id="main-content">${views[view](family)}</main><footer class="app-footer"><p>Local-first prototype · Sample or personal photos · No external integrations</p><div><button class="text-button" data-action="clear-issue">Clear current issue</button><button class="text-button" data-action="reset-family">Reset current family demo</button><button class="text-button danger" data-action="reset-all">Reset all demonstration data</button></div></footer></div><div id="live-status" class="sr-only" role="status" aria-live="polite"></div>`;
+  app.innerHTML = `<div class="prototype-banner" role="note"><strong>Private prototype:</strong> photos stay in this browser tab. Nothing is uploaded or saved after the tab closes.</div><div class="app-shell"><header class="app-header"><a class="brand" href="#" data-action="view" data-view="setup" aria-label="Family Weekly home"><span>Family</span> Weekly</a><div class="issue-status"><span class="${statusClass(family.issueStatus)}">${statusLabel(family.issueStatus)}</span><small>Issue ${family.issueNumber}</small></div></header><div class="identity-strip"><div><span>Family</span><strong>${escapeHtml(family.familyName)}</strong></div><div><span>Made for</span><strong>${escapeHtml(family.recipientName)}</strong></div></div>${nav()}<main id="main-content">${views[view](family)}</main><footer class="app-footer"><p>Local-first prototype · Sample or personal photos · No external integrations</p><div><button class="text-button" data-action="clear-issue">Clear current issue</button><button class="text-button" data-action="reset-family">Reset current family demo</button><button class="text-button danger" data-action="reset-all">Reset all demonstration data</button></div></footer></div><div id="live-status" class="sr-only" role="status" aria-live="polite"></div>`;
 };
 
 const getItem = (id: string): Contribution | undefined =>
@@ -367,26 +365,19 @@ app.addEventListener("click", async (event) => {
     item.suggestion = undefined;
     invalidateApproval(family);
   }
-  if (action === "send-preview") {
+  if (action === "approve") {
     const errors = approvalErrors(family);
     if (errors.length) {
-      announce(`Approval blocked. ${errors.join(" ")}`);
+      announce(`Cannot approve yet. ${errors.join(" ")}`);
+      document.querySelector<HTMLElement>(".validation-summary")?.focus();
       return;
     }
-    if (!issueNeedsApproval(family)) {
-      family.issueStatus = "Approved";
-      announce(
-        "Routine issue approved under the family preauthorization. No preview was sent.",
-      );
-      render();
-      return;
-    }
-    family.issueStatus = "Awaiting curator approval";
-    announce("Simulated curator preview is ready. No message was sent.");
-  }
-  if (action === "approve" && !approvalErrors(family).length) {
     family.issueStatus = "Approved";
-    announce("Curator approval recorded.");
+    announce(
+      issueNeedsApproval(family)
+        ? "Curator approval recorded. The issue is ready to print."
+        : "Routine issue approved. It is ready to print.",
+    );
   }
   if (action === "preauthorize-future" && family.issueNumber === 1) {
     family.approvalLevel = "Preauthorized";
@@ -505,15 +496,6 @@ app.addEventListener("change", (event) => {
   const input = event.target as
     HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
   const family = activeFamily();
-  if (input.id === "family-switcher") {
-    state.activeFamilyId = input.value as FamilyId;
-    render();
-    focusView();
-    announce(
-      `Switched to ${activeFamily().familyName}. Only this family's content is visible.`,
-    );
-    return;
-  }
   if (input.dataset.familyField) {
     const key = input.dataset.familyField as keyof FamilyWorkspace;
     const value: unknown =

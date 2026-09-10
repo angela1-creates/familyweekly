@@ -114,7 +114,7 @@ a:focus-visible {
 }
 .app-header {
   display: grid;
-  grid-template-columns: 1fr minmax(18rem, 30rem) auto;
+  grid-template-columns: 1fr auto;
   gap: 2rem;
   align-items: end;
   padding: 1.5rem 0 1rem;
@@ -131,11 +131,6 @@ a:focus-visible {
 .brand span {
   color: var(--burgundy);
 }
-.family-switcher {
-  display: grid;
-  gap: 0.35rem;
-}
-.family-switcher span,
 .field > span,
 .comparison span {
   color: var(--muted);
@@ -211,11 +206,6 @@ textarea {
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-}
-.identity-warning {
-  margin-left: auto;
-  color: var(--burgundy);
-  font-weight: 800;
 }
 .workflow-nav {
   display: grid;
@@ -825,10 +815,6 @@ code {
     align-items: flex-start;
     flex-wrap: wrap;
     gap: 0.8rem 1.5rem;
-  }
-  .identity-warning {
-    width: 100%;
-    margin-left: 0;
   }
   .workflow-nav {
     grid-template-columns: 1fr;
