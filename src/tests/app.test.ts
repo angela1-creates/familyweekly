@@ -13,14 +13,14 @@ describe("Stage 0 application", () => {
     await loadApp();
   });
 
-  it("shows the persistent local-only notice and simulated link", () => {
+  it("explains local printing without showing inactive sharing tools", () => {
     expect(document.body.textContent).toContain(
       "photos stay in this browser tab",
     );
-    expect(document.body.textContent).toContain(
-      "Demonstration link · not active",
-    );
-    expect(document.body.textContent).toContain("example.invalid");
+    expect(document.body.textContent).toContain("arrange and print them");
+    expect(document.body.textContent).not.toContain("Demonstration link");
+    expect(document.body.textContent).not.toContain("example.invalid");
+    expect(document.body.textContent).not.toContain("Copy tools");
   });
 
   it("replaces sample stories with locally selected photos and optional captions", () => {
@@ -122,6 +122,16 @@ describe("Stage 0 application", () => {
     expect(document.querySelector("#live-status")?.textContent).toContain(
       "Cannot approve yet",
     );
+    document
+      .querySelector<HTMLElement>(
+        '.validation-summary [data-view="contributions"]',
+      )
+      ?.click();
+    expect(
+      document.querySelector<HTMLInputElement>(
+        '[data-item-id="demo-a-item-2"] [data-item-field="guardianPermission"]',
+      ),
+    ).not.toBeNull();
   });
 
   it("contains no persistent storage or external request calls", async () => {

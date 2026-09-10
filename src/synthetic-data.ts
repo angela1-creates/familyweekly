@@ -94,6 +94,7 @@ const makeItems = (
     date: moment.date,
     place: moment.place,
     contributor: identities[familyId][index].contributor,
+    contributorId: `${familyId}-${identities[familyId][index].contributor.toLowerCase()}`,
     permission: !(missingPermission && index === 1),
     showsMinor: moment.minor,
     guardianPermission: !moment.minor || !(missingPermission && index === 1),
@@ -107,7 +108,13 @@ const makeFamily = (
   curatorName: string,
   language: string,
   missingPermission = false,
-): FamilyWorkspace => ({
+): FamilyWorkspace => {
+  const contributors = [
+    { id: `${id}-curator`, name: curatorName, token: `${id}-curator-demo-token`, active: true },
+    { id: `${id}-mara`, name: "Mara", token: `${id}-mara-demo-token`, active: true },
+    { id: `${id}-theo`, name: "Theo", token: `${id}-theo-demo-token`, active: true },
+  ];
+  return ({
   id,
   familyName,
   recipientName,
@@ -124,7 +131,10 @@ const makeFamily = (
   sensitiveTopics: "No medical, financial, or private family conflict stories",
   headline: "Small moments, saved for you",
   contributions: makeItems(id, missingPermission),
-});
+    contributors,
+    activeContributorId: contributors[0].id,
+  });
+};
 
 export const createDemoState = (): DemoState => ({
   activeFamilyId: "demo-a",

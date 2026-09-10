@@ -31,11 +31,19 @@ export interface Contribution {
   date?: string;
   place?: string;
   contributor: string;
+  contributorId?: string;
   permission: boolean;
   showsMinor: boolean;
   guardianPermission: boolean;
   status: ContributionStatus;
   suggestion?: string;
+}
+
+export interface FamilyContributor {
+  id: string;
+  name: string;
+  token: string;
+  active: boolean;
 }
 
 export interface Reply {
@@ -63,6 +71,8 @@ export interface FamilyWorkspace {
   sensitiveTopics: string;
   headline: string;
   contributions: Contribution[];
+  contributors: FamilyContributor[];
+  activeContributorId: string;
   reply?: Reply;
   openingReply?: string;
 }
