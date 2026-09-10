@@ -1,6 +1,5 @@
 import "./styles.css";
 import { DemoCaptionAssistant } from "./caption-assistant";
-import { channelAdapters } from "./channels";
 import {
   approvalErrors,
   canAddPhoto,
@@ -12,10 +11,11 @@ import {
   replacePhoto,
   selectedItems,
   type Contribution,
+  type FamilyContributor,
   type FamilyWorkspace,
   type IssueStatus,
 } from "./model";
-import { createDemoState, demonstrationUrl } from "./synthetic-data";
+import { createDemoState } from "./synthetic-data";
 
 type View = "setup" | "contributions" | "builder" | "approval";
 
@@ -36,6 +36,19 @@ const escapeHtml = (value: string): string =>
 
 const activeFamily = (): FamilyWorkspace =>
   state.families[state.activeFamilyId];
+
+const openContributorInvite = (): void => {
+  const parts = window.location.hash.replace(/^#contributor\//, "").split("/");
+  if (parts.length !== 3 || !window.location.hash.startsWith("#contributor/")) return;
+  const family = state.families[parts[0] as keyof typeof state.families];
+  const contributor = family?.contributors.find(
+    (entry) => entry.id === parts[1] && entry.token === parts[2] && entry.active,
+  );
+  if (!family || !contributor) return;
+  state.activeFamilyId = family.id;
+  family.activeContributorId = contributor.id;
+  view = "contributions";
+};
 
 const formatDate = (value: string): string => {
   const [year, month, day] = value.split("-").map(Number);
@@ -78,6 +91,15 @@ const photoStyle = (item: Contribution): string => {
 const photoLabel = (item: Contribution): string =>
   item.who.trim() ? `Photograph of ${item.who}` : "Family photograph";
 
+const contributorInviteUrl = (family: FamilyWorkspace, contributor: FamilyContributor): string =>
+  `${window.location.origin}${import.meta.env.BASE_URL}#contributor/${family.id}/${contributor.id}/${contributor.token}`;
+
+const newToken = (): string => {
+  const bytes = new Uint8Array(18);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+};
+
 const nav = (): string => {
   const items: Array<[View, string, string]> = [
     ["setup", "1", "Family setup"],
@@ -104,15 +126,6 @@ const field = (
 
 const setupView = (family: FamilyWorkspace): string => {
   const cutoffDate = issueCutoffDate(family.issueDate);
-  const reminder = `Family Weekly submissions are open for ${family.recipientName}. Please add photographs by ${formatDate(cutoffDate)} for the ${formatDate(family.issueDate)} issue. Captions are optional. Please confirm permission to include each photo in this private printed issue.`;
-  const messages = [
-    ["reminder", "Copy submission reminder", reminder],
-    [
-      "preview",
-      "Copy preview-ready message",
-      `The private Family Weekly preview for ${family.recipientName} is ready. Please review it in the demonstration tool. Nothing has been sent automatically.`,
-    ],
-  ];
   return `<section class="view-panel" aria-labelledby="view-title">
     <div class="eyebrow">Part 1 of 4</div><h2 id="view-title" tabindex="-1">Family setup</h2>
     <p class="lede">Name the people this private issue belongs to. The schedule and print defaults are handled for you.</p>
@@ -122,7 +135,7 @@ const setupView = (family: FamilyWorkspace): string => {
       ${field("Family curator", "curatorName", family.curatorName)}
     </div>
     <section class="share-panel schedule-summary" aria-label="Automatic issue schedule"><div><span class="eyebrow">Issue ${family.issueNumber}</span><h3>${formatDate(family.issueDate)}</h3><small>Publication date</small></div><div><span class="eyebrow">Photo cutoff</span><h3>${formatDate(cutoffDate)}</h3><small>After Wednesday, photos move to the following Sunday.</small></div></section>
-    <section class="share-panel" aria-labelledby="share-title"><div><div class="eyebrow">Copy tools</div><h3 id="share-title">Share submission instructions</h3><p><strong>Demonstration link · not active</strong><br><code>${demonstrationUrl(family)}</code></p></div><div class="copy-grid">${messages.map(([id, label, text]) => `<button class="secondary" data-action="copy" data-message="${escapeHtml(text)}" data-copy-kind="${id}">${label}</button>`).join("")}</div></section>
+    <section class="share-panel contributor-invites" aria-labelledby="contributors-title"><div class="section-heading"><div><span class="eyebrow">Persistent family circle</span><h3 id="contributors-title">Invite contributors once</h3><p>Each person gets a private link they can reuse for every weekly issue. Links are revocable and do not require an account or password.</p></div><button data-action="invite-contributor">Add contributor</button></div><div class="invite-list">${family.contributors.map((contributor) => `<div class="invite-row ${contributor.active ? "" : "is-revoked"}"><div><strong>${escapeHtml(contributor.name)}</strong><small>${contributor.active ? "Active member" : "Revoked"}</small></div><div class="invite-actions">${contributor.active ? `<button class="secondary" data-action="share-contributor" data-contributor-id="${contributor.id}">Share link</button><button class="text-button danger" data-action="revoke-contributor" data-contributor-id="${contributor.id}">Revoke</button>` : `<button class="secondary" data-action="restore-contributor" data-contributor-id="${contributor.id}">Restore</button>`}</div></div>`).join("")}</div></section>
   </section>`;
 };
 
@@ -134,7 +147,7 @@ const contributionCard = (
   <div class="contribution-content"><div class="card-heading"><div><span class="item-number">Item ${index + 1}</span><h3>${escapeHtml(item.headline)}</h3></div><span class="status">${item.status}</span></div>
     <label class="field"><span>Headline</span><input data-item-field="headline" value="${escapeHtml(item.headline)}"></label>
     <label class="field"><span>Original caption</span><textarea data-item-field="originalCaption" rows="3">${escapeHtml(item.originalCaption)}</textarea></label>
-    <fieldset class="permission-panel"><legend>Photo permission <strong>Required</strong></legend><label class="check"><input type="checkbox" data-item-field="permission" ${item.permission ? "checked" : ""}><span>I confirm that I may share this photograph in this private family issue.</span></label><label class="check"><input type="checkbox" data-item-field="showsMinor" ${item.showsMinor ? "checked" : ""}><span>This photograph shows a minor.</span></label>${item.showsMinor ? `<label class="check nested"><input type="checkbox" data-item-field="guardianPermission" ${item.guardianPermission ? "checked" : ""}><span>A parent or guardian confirms the minor may appear.</span></label>` : ""}</fieldset>
+    <fieldset class="permission-panel"><legend>Photo permission <strong>Required</strong></legend><label class="check"><input type="checkbox" data-item-field="permission" ${item.permission ? "checked" : ""}><span>I have permission to share this photo with this Family Weekly.</span></label><label class="check"><input type="checkbox" data-item-field="showsMinor" ${item.showsMinor ? "checked" : ""}><span>This photograph shows a minor.</span></label>${item.showsMinor ? `<label class="check nested"><input type="checkbox" data-item-field="guardianPermission" ${item.guardianPermission ? "checked" : ""}><span>A parent or guardian confirms the minor may appear.</span></label>` : ""}</fieldset>
     <div class="form-grid compact">${fieldForItem(item, "Who is pictured", "who", item.who)}${fieldForItem(item, "Optional date", "date", item.date ?? "", "date")}${fieldForItem(item, "Optional place", "place", item.place ?? "")}${fieldForItem(item, "Contributor", "contributor", item.contributor)}</div>
     <label class="field"><span>Status</span><select data-item-field="status">${["Draft", "Ready for review", "Deferred", "Excluded"].map((status) => `<option ${item.status === status ? "selected" : ""}>${status}</option>`).join("")}</select></label>
     <div class="button-row"><button class="secondary" data-action="move-earlier" data-id="${item.id}" ${index === 0 ? "disabled" : ""}>Move earlier</button><button class="secondary" data-action="move-later" data-id="${item.id}" ${index === activeFamily().contributions.length - 1 ? "disabled" : ""}>Move later</button><button class="text-button danger" data-action="remove-item" data-id="${item.id}">Remove</button></div>
@@ -162,7 +175,7 @@ const contributionsView = (
   family: FamilyWorkspace,
 ): string => `<section class="view-panel" aria-labelledby="view-title">
   <div class="eyebrow">Part 2 of 4</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Contributions</h2><p class="lede">Add or review up to four photographs. Captions are optional and always remain editable.</p></div><div class="count-box"><strong>${selectedItems(family).length}/4</strong><span>selected</span><small>${state.pilotPhotoCount}/50 pilot photos</small></div></div>
-  <section class="upload-panel" aria-labelledby="upload-title"><div><div class="eyebrow">Your family moments</div><h3 id="upload-title">Add photos from this device</h3><p>Choose one or more images. They stay in this browser tab, are never uploaded, and disappear when the tab closes.</p></div><label class="upload-control ${canChoosePhotos(family) ? "" : "is-disabled"}"><span>Choose photos</span><input type="file" accept="image/*" multiple data-new-photo-input ${canChoosePhotos(family) ? "" : "disabled"}></label><small>Up to 15 MB per image. ${hasOnlySampleContributions(family) ? "Your first upload replaces the four sample stories." : `${Math.max(0, 4 - selectedItems(family).length)} spaces remain in this issue.`}</small></section>
+  <section class="upload-panel" aria-labelledby="upload-title"><div><div class="eyebrow">Your family moments</div><h3 id="upload-title">Add photos from this device</h3><p>Choose one or more images. They stay in this browser tab, are never uploaded, and disappear when the tab closes.</p></div><label class="field"><span>Submitting as</span><select data-family-field="activeContributorId">${family.contributors.filter((contributor) => contributor.active).map((contributor) => `<option value="${contributor.id}" ${family.activeContributorId === contributor.id ? "selected" : ""}>${escapeHtml(contributor.name)}</option>`).join("")}</select></label><label class="upload-control ${canChoosePhotos(family) ? "" : "is-disabled"}"><span>Choose photos</span><input type="file" accept="image/*" multiple data-new-photo-input ${canChoosePhotos(family) ? "" : "disabled"}></label><small>Up to 15 MB per image. ${hasOnlySampleContributions(family) ? "Your first upload replaces the four sample stories." : `${Math.max(0, 4 - selectedItems(family).length)} spaces remain in this issue.`}</small></section>
   <div class="callout warning"><strong>Permission still comes first</strong><span>Confirm permission—and guardian permission when a minor appears—before approving the issue.</span></div>
   <div class="contribution-list">${family.contributions.map(contributionCard).join("")}</div>
 </section>`;
@@ -223,7 +236,7 @@ const approvalView = (family: FamilyWorkspace): string => {
     "Received",
   ].includes(family.issueStatus);
   return `<section class="view-panel" aria-labelledby="view-title"><div class="eyebrow">Part 4 of 4</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Approval, print & delivery</h2><p class="lede">Photo permissions are always required. Curator preview can be skipped only for routine issues with a standing preference.</p></div><span class="${statusClass(family.issueStatus)}">${family.issueStatus}</span></div>
-  ${errors.length ? `<div class="validation-summary" role="alert" tabindex="-1"><h3>Complete these checks</h3><ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul></div>` : `<div class="callout success"><strong>${needsPreview ? "Ready for curator preview" : "Ready under the standing preference"}</strong><span>All required identity and photo-permission checks pass.</span></div>`}
+  ${errors.length ? `<div class="validation-summary" role="alert" tabindex="-1"><h3>Complete these checks</h3><ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul><button class="secondary" data-action="view" data-view="contributions">Go to Step 2 photo permissions</button></div>` : `<div class="callout success"><strong>${needsPreview ? "Ready for curator preview" : "Ready under the standing preference"}</strong><span>All required identity and photo-permission checks pass.</span></div>`}
   <div class="approval-layout"><div class="approval-actions"><section><span class="eyebrow">Curator review</span><h3>${escapeHtml(family.curatorName)}</h3><p>${errors.length ? "Use the checklist above to finish photo permissions, then approve here." : needsPreview ? "The complete issue is visible beside this panel. Record the curator's approval when ready." : "This routine issue can be approved under the standing preference."}</p><div class="button-stack"><button data-action="approve" ${approvalRecorded ? "disabled" : ""}>${approvalRecorded ? "Approval recorded" : needsPreview ? "Approve issue" : "Approve routine issue"}</button><button class="secondary" data-action="request-changes">Request changes</button><button class="text-button" data-action="skip-issue">Skip this issue</button></div>${family.issueNumber === 1 && approvalRecorded ? `<div class="standing-preference"><strong>Future routine issues</strong><p>${family.approvalLevel === "Preauthorized" ? "Curator previews may be skipped when all permissions are complete." : "Curator review is still required for every issue."}</p>${family.approvalLevel === "Preauthorized" ? "" : `<button class="secondary" data-action="preauthorize-future">Allow routine issues without another preview</button>`}</div>` : ""}</section><section><span class="eyebrow">Print & handoff</span><label class="field"><span>Delivery method</span><select data-family-field="deliveryMethod">${["Family handoff", "Senior-center handoff", "Local mail"].map((option) => `<option ${family.deliveryMethod === option ? "selected" : ""}>${option}</option>`).join("")}</select></label><div class="button-stack"><button data-action="print" ${canPrint(family) ? "" : "disabled"}>Open browser print</button><button class="secondary" data-action="mark-sent" ${family.issueStatus !== "Printed" ? "disabled" : ""}>Record sent or handed off</button><button class="secondary" data-action="mark-received" ${family.issueStatus !== "Sent or handed off" ? "disabled" : ""}>Record received (optional)</button></div><p class="fine-print">Received is a voluntary delivery note. It is not engagement, wellbeing, or relationship data.</p></section></div><div class="mini-preview">${newspaper(family)}</div></div></section>`;
 };
 
@@ -235,7 +248,7 @@ const render = (): void => {
     builder: builderView,
     approval: approvalView,
   };
-  app.innerHTML = `<div class="prototype-banner" role="note"><strong>Private prototype:</strong> photos stay in this browser tab. Nothing is uploaded or saved after the tab closes.</div><div class="app-shell"><header class="app-header"><a class="brand" href="#" data-action="view" data-view="setup" aria-label="Family Weekly home"><span>Family</span> Weekly</a><div class="issue-status"><span class="${statusClass(family.issueStatus)}">${statusLabel(family.issueStatus)}</span><small>Issue ${family.issueNumber}</small></div></header><div class="identity-strip"><div><span>Family</span><strong>${escapeHtml(family.familyName)}</strong></div><div><span>Made for</span><strong>${escapeHtml(family.recipientName)}</strong></div></div>${nav()}<main id="main-content">${views[view](family)}</main><footer class="app-footer"><p>Local-first prototype · Sample or personal photos · No external integrations</p><div><button class="text-button" data-action="clear-issue">Clear current issue</button><button class="text-button" data-action="reset-family">Reset current family demo</button><button class="text-button danger" data-action="reset-all">Reset all demonstration data</button></div></footer></div><div id="live-status" class="sr-only" role="status" aria-live="polite"></div>`;
+  app.innerHTML = `<div class="prototype-banner" role="note"><strong>Private prototype:</strong> photos stay in this browser tab so you can arrange and print them. Nothing is uploaded, and closing the tab clears them.</div><div class="app-shell"><header class="app-header"><a class="brand" href="#" data-action="view" data-view="setup" aria-label="Family Weekly home"><span>Family</span> Weekly</a><div class="issue-status"><span class="${statusClass(family.issueStatus)}">${statusLabel(family.issueStatus)}</span><small>Issue ${family.issueNumber}</small></div></header><div class="identity-strip"><div><span>Family</span><strong>${escapeHtml(family.familyName)}</strong></div><div><span>Made for</span><strong>${escapeHtml(family.recipientName)}</strong></div></div>${nav()}<main id="main-content">${views[view](family)}</main><footer class="app-footer"><p>Local-first prototype · Sample or personal photos · No external integrations</p><div><button class="text-button" data-action="clear-issue">Clear current issue</button><button class="text-button" data-action="reset-family">Reset current family demo</button><button class="text-button danger" data-action="reset-all">Reset all demonstration data</button></div></footer></div><div id="live-status" class="sr-only" role="status" aria-live="polite"></div>`;
 };
 
 const getItem = (id: string): Contribution | undefined =>
@@ -285,7 +298,8 @@ const addLocalPhotos = (
       editedCaption: "",
       headline: baseName || "A family moment",
       who: "",
-      contributor: family.curatorName,
+      contributor: family.contributors.find((entry) => entry.id === family.activeContributorId)?.name ?? family.curatorName,
+      contributorId: family.activeContributorId,
       permission: false,
       showsMinor: false,
       guardianPermission: false,
@@ -299,6 +313,9 @@ const addLocalPhotos = (
 };
 
 const confirmReset = (message: string): boolean => window.confirm(message);
+
+const getContributor = (family: FamilyWorkspace, id: string): FamilyContributor | undefined =>
+  family.contributors.find((contributor) => contributor.id === id);
 
 app.addEventListener("click", async (event) => {
   const target = (event.target as HTMLElement).closest<HTMLElement>(
@@ -323,6 +340,54 @@ app.addEventListener("click", async (event) => {
       (entry) => entry.id !== item.id,
     );
     invalidateApproval(family);
+  }
+  if (action === "invite-contributor") {
+    const name = window.prompt("Contributor name")?.trim();
+    if (name) {
+      const contributor: FamilyContributor = {
+        id: `${family.id}-contributor-${Date.now()}`,
+        name,
+        token: newToken(),
+        active: true,
+      };
+      family.contributors.push(contributor);
+      family.activeContributorId = contributor.id;
+      announce(`${name} added as a family contributor.`);
+    }
+  }
+  if (["revoke-contributor", "restore-contributor"].includes(action ?? "")) {
+    const contributor = target.dataset.contributorId
+      ? getContributor(family, target.dataset.contributorId)
+      : undefined;
+    if (contributor) {
+      contributor.active = action === "restore-contributor";
+      if (!contributor.active && family.activeContributorId === contributor.id) {
+        family.activeContributorId = family.contributors.find((entry) => entry.active)?.id ?? family.activeContributorId;
+      }
+      announce(`${contributor.name}'s contributor link ${contributor.active ? "restored" : "revoked"}.`);
+    }
+  }
+  if (action === "share-contributor") {
+    const contributor = target.dataset.contributorId
+      ? getContributor(family, target.dataset.contributorId)
+      : undefined;
+    if (contributor) {
+      const url = contributorInviteUrl(family, contributor);
+      const shareData = { title: `Family Weekly for ${family.recipientName}`, text: `Add something from your week to ${family.familyName}'s Family Weekly.`, url };
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+          announce("Invitation shared.");
+        } catch {
+          announce("Share canceled.");
+        }
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        announce("Invitation link copied.");
+      } else {
+        window.prompt("Copy this private contributor link", url);
+      }
+    }
   }
   if (action === "defer-item" && item) {
     item.status = "Deferred";
@@ -390,17 +455,6 @@ app.addEventListener("click", async (event) => {
   ) {
     family.issueStatus = "Received";
     announce("Voluntary receipt confirmation recorded. No inference was made.");
-  }
-  if (action === "copy" && target.dataset.message) {
-    try {
-      const result = await channelAdapters.manual.copy(
-        target.dataset.message,
-        true,
-      );
-      announce(result.message);
-    } catch {
-      announce("Clipboard access was unavailable. Nothing was sent.");
-    }
   }
   if (
     action === "clear-issue" &&
@@ -513,4 +567,5 @@ window.addEventListener("beforeunload", () => {
   );
 });
 
+openContributorInvite();
 render();
