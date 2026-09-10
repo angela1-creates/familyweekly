@@ -209,7 +209,7 @@ textarea {
 }
 .workflow-nav {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   margin: 1rem 0 1.5rem;
   border-bottom: 1px solid var(--line);
 }
@@ -474,6 +474,25 @@ code {
   margin-left: 1rem;
   padding-left: 1rem;
   border-left: 3px solid var(--line);
+}
+.permission-panel {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  border: 2px solid #a45f16;
+  border-radius: 0.65rem;
+  background: #fff8ec;
+}
+.permission-panel legend {
+  padding: 0 0.4rem;
+  color: var(--ink);
+  font-weight: 800;
+}
+.permission-panel legend strong {
+  margin-left: 0.4rem;
+  color: #8b3029;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 .button-row,
 .button-stack {
@@ -881,7 +900,7 @@ code {
     position: static;
   }
   .workflow-nav {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
   .workflow-step {
     min-height: 50px;
