@@ -144,7 +144,7 @@ describe("Family Weekly application", () => {
     expect(css).toContain(".workflow-nav");
     expect(css).toContain("display: none !important");
     document.querySelector<HTMLElement>('[data-view="builder"]')?.click();
-    expect(document.querySelectorAll(".newspaper-page")).toHaveLength(1);
+    expect(document.querySelectorAll(".newspaper-page")).toHaveLength(2);
   });
 
   it("completes the contribute-to-print journey", () => {
@@ -178,7 +178,7 @@ describe("Family Weekly application", () => {
       .querySelector<HTMLElement>('[data-action="preauthorize-future"]')
       ?.click();
     expect(document.body.textContent).toContain(
-      "Curator previews may be skipped",
+      "Organizer previews may be skipped",
     );
     document.querySelector<HTMLElement>('[data-action="print"]')?.click();
     expect(window.print).toHaveBeenCalledOnce();
