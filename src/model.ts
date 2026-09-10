@@ -25,6 +25,7 @@ export interface Contribution {
   photoSrc: string;
   photoPosition: string;
   isObjectUrl?: boolean;
+  originalFileName?: string;
   originalCaption: string;
   editedCaption: string;
   headline: string;

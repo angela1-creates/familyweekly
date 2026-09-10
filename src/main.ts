@@ -137,7 +137,7 @@ const setupView = (family: FamilyWorkspace): string => {
       ${field("Family organizer", "curatorName", family.curatorName)}
     </div>
     <section class="share-panel schedule-summary" aria-label="Automatic issue schedule"><div><span class="eyebrow">Issue ${family.issueNumber}</span><h3>${formatDate(family.issueDate)}</h3><small>Publication date</small></div><div><span class="eyebrow">Photo cutoff</span><h3>${formatDate(cutoffDate)}</h3><small>After Wednesday, photos move to the following Sunday.</small></div></section>
-    <section class="share-panel contributor-invites" aria-labelledby="contributors-title"><div class="section-heading"><div><span class="eyebrow">Persistent family circle</span><h3 id="contributors-title">Invite contributors once</h3><p>Each person gets a private link they can reuse for every weekly issue. The organizer owns the family circle and cannot be revoked.</p></div><button data-action="invite-contributor">Add contributor</button></div><div class="invite-list">${family.contributors.map((contributor) => `<div class="invite-row ${contributor.active ? "" : "is-revoked"}"><div><strong>${escapeHtml(contributor.name)}</strong><small>${contributor.role === "curator" ? "Organizer · permanent member" : contributor.active ? "Active member" : "Revoked"}</small></div><div class="invite-actions">${contributor.role === "curator" ? `<button class="secondary" data-action="share-contributor" data-contributor-id="${contributor.id}">Share link</button>` : contributor.active ? `<button class="secondary" data-action="share-contributor" data-contributor-id="${contributor.id}">Share link</button><button class="text-button danger" data-action="revoke-contributor" data-contributor-id="${contributor.id}">Revoke</button>` : `<button class="secondary" data-action="restore-contributor" data-contributor-id="${contributor.id}">Restore</button>`}</div></div>`).join("")}</div></section>
+    <section class="share-panel contributor-invites" aria-labelledby="contributors-title"><div class="section-heading"><div><span class="eyebrow">Persistent family circle</span><h3 id="contributors-title">Invite contributors once</h3><p>Each person gets a private link they can reuse for every weekly issue. The organizer owns the family circle and cannot be revoked.</p></div><button data-action="invite-contributor">Add contributor</button></div><div class="invite-list">${family.contributors.map((contributor) => `<div class="invite-row ${contributor.active ? "" : "is-revoked"}"><div><strong>${escapeHtml(contributor.name)}</strong><small>${contributor.role === "curator" ? "Organizer · permanent member" : contributor.active ? "Active member" : "Revoked"}</small></div><div class="invite-actions">${contributor.role === "curator" ? "" : contributor.active ? `<button class="secondary" data-action="share-contributor" data-contributor-id="${contributor.id}">Share link</button><button class="text-button danger" data-action="revoke-contributor" data-contributor-id="${contributor.id}">Revoke</button>` : `<button class="secondary" data-action="restore-contributor" data-contributor-id="${contributor.id}">Restore</button>`}</div></div>`).join("")}</div></section>
   </section>`;
 };
 
@@ -197,7 +197,7 @@ const builderItem = (
 const newspaper = (family: FamilyWorkspace): string => {
   const items = selectedItems(family);
   const pages = Array.from(
-    { length: Math.max(1, Math.ceil(items.length / 4)) },
+    { length: Math.max(2, Math.ceil(items.length / 4)) },
     (_, index) => items.slice(index * 4, index * 4 + 4),
   );
   return `<div id="newspaper" class="print-root paper-${family.paperSize.toLowerCase()} text-${family.textSize}" aria-label="${pages.length}-page newspaper preview">${pages
@@ -280,15 +280,29 @@ const addLocalPhotos = (
       file.type.startsWith("image/") && file.size <= MAX_LOCAL_IMAGE_BYTES,
   );
   let rejected = chosenFiles.length - validFiles.length;
+  const existingNames = new Set(
+    family.contributions
+      .filter((item) => item.isObjectUrl && item.originalFileName)
+      .map((item) => item.originalFileName!.toLowerCase()),
+  );
+  const uniqueFiles = validFiles.filter((file) => {
+    const name = file.name.toLowerCase();
+    if (existingNames.has(name)) {
+      rejected += 1;
+      return false;
+    }
+    existingNames.add(name);
+    return true;
+  });
   if (
-    validFiles.length > 0 &&
+    uniqueFiles.length > 0 &&
     canAddPhoto(state) &&
     hasOnlySampleContributions(family)
   ) {
     family.contributions = [];
   }
   let added = 0;
-  validFiles.forEach((file, index) => {
+  uniqueFiles.forEach((file, index) => {
     const contributorPhotoCount = family.contributions.filter(
       (item) => item.contributorId === family.activeContributorId && item.isObjectUrl,
     ).length;
@@ -302,6 +316,7 @@ const addLocalPhotos = (
       photoSrc: URL.createObjectURL(file),
       photoPosition: "center",
       isObjectUrl: true,
+      originalFileName: file.name,
       originalCaption: "",
       editedCaption: "",
       headline: baseName || "A family moment",
@@ -508,6 +523,10 @@ app.addEventListener("change", (event) => {
         ? Number(input.value)
         : input.value;
     (family as unknown as Record<string, unknown>)[key] = value;
+    if (key === "curatorName" && typeof value === "string") {
+      const organizer = family.contributors.find((entry) => entry.role === "curator");
+      if (organizer) organizer.name = value;
+    }
     invalidateApproval(family);
     render();
     return;
@@ -546,6 +565,7 @@ app.addEventListener("change", (event) => {
         URL.createObjectURL(file),
         URL.revokeObjectURL.bind(URL),
       );
+      item.originalFileName = file.name;
       invalidateApproval(family);
       render();
       announce("Local image replaced in browser memory only.");
@@ -560,7 +580,7 @@ app.addEventListener("change", (event) => {
     announce(
       `${added} ${added === 1 ? "photo" : "photos"} added in browser memory.${
         rejected
-          ? ` ${rejected} could not be added because of the four-photo-per-contributor, pilot, file type, or 15 MB limit.`
+          ? ` ${rejected} duplicate, invalid, oversized, or over-limit ${rejected === 1 ? "file was" : "files were"} skipped.`
           : ""
       }`,
     );
