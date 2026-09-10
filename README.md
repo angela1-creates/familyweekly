@@ -1,4 +1,4 @@
-# Family Weekly · Stage 0
+# Family Weekly
 
 Family Weekly turns a small set of explicitly submitted family photographs and optional captions into a private, accessible printed newspaper for one older adult. This repository is a portfolio-quality, local-first prototype. It includes fictional sample families and also lets someone choose photographs from their own device.
 
@@ -8,7 +8,7 @@ The loop is:
 
 The older adult is a participant, not a monitored subject. Family Weekly never scores or infers loneliness, health, cognition, mood, safety, family quality, or digital ability.
 
-## Stage 0 boundaries
+## Prototype boundaries
 
 - Personal photos may be selected for a local preview on a trusted device. They stay in browser memory, are never uploaded by the app, and disappear when the tab closes or the issue is cleared.
 - The sample family identities are fictional. Replace their identifying details before creating a personal issue, and confirm permission for every selected photograph.
@@ -41,10 +41,10 @@ npm run build
 ## Manual pilot workflow
 
 1. Select a fictional family workspace.
-2. Review its four sample contributions, or choose up to four photos from the device. The first upload replaces the sample stories; captions are optional and editable.
-3. Correct the intentionally missing permission and guardian attestations.
+2. Review the sample stories, or choose up to four photos from the device. Select multiple files in one picker; captions are optional and editable.
+3. Confirm permission to share each selected photo.
 4. Compare original and edited captions, and optionally request a predefined demonstration suggestion.
-5. Arrange stories with Move earlier and Move later buttons.
+5. Arrange stories in the Issue builder.
 6. Send the simulated curator preview, then approve the first issue.
 7. Open browser print and record the manual handoff status.
 8. Optionally record a handwritten card, voice capture at delivery, or supported phone reply. Confirm the exact wording and recipients.
@@ -59,7 +59,7 @@ AI may eventually suggest grammar, shortening, translation drafts, headlines, or
 
 ## Messaging-channel boundaries
 
-`ChannelAdapter` defines `manual`, `whatsapp`, `wechat`, `imessage`, and `email` channel types. Only `ManualChannelAdapter` works in Stage 0, and it copies text after an explicit button press. Other adapters return **Not connected in Stage 0**.
+`ChannelAdapter` defines `manual`, `whatsapp`, `wechat`, `imessage`, and `email` channel types. Only `ManualChannelAdapter` works in the prototype, and it copies text after an explicit button press. Other adapters remain disconnected.
 
 The prototype does not open or read group conversations, import history, monitor activity, send platform requests, or claim delivery. The displayed `example.invalid` links are visibly inactive demonstrations.
 
@@ -80,11 +80,11 @@ Print CSS hides navigation and controls, preserves 16pt, 18pt, or 20pt body text
 
 ## Simulated, manual, and connected
 
-| Capability                          | Stage 0 state                       |
+| Capability                          | Prototype state                    |
 | ----------------------------------- | ----------------------------------- |
 | Family workspaces and issue builder | Working locally in memory           |
 | Local photo selection               | Working locally; never uploaded     |
-| Synthetic caption suggestions       | Working, predefined demonstration   |
+| Caption suggestions                 | Working, predefined demonstration   |
 | Curator preview and approval        | Simulated status workflow           |
 | Browser print                       | Working local browser capability    |
 | Delivery and receipt                | Manual operator record only         |

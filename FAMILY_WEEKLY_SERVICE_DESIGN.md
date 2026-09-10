@@ -8,7 +8,7 @@ Stage: Pre-implementation
 
 Family Weekly helps one older adult stay meaningfully involved in family life when the family's everyday communication happens in fast digital channels they do not comfortably use.
 
-The service turns a small set of explicitly submitted family photographs and captions into a private, accessible weekly newspaper for one older adult recipient. The recipient can read, keep, and annotate it without technology. Responses are optional: a handwritten card is the primary share-back method in Stage 0, with voice capture during delivery as a supported alternative.
+The service turns a small set of explicitly submitted family photographs and captions into a private, accessible weekly newspaper for one older adult recipient. The recipient can read, keep, and annotate it without technology. Responses are optional: a handwritten card is the primary share-back method in the prototype, with voice capture during delivery as a supported alternative.
 
 Each family has its own issue dedicated to its one older-adult recipient. Families are never combined into a shared newspaper, preview, PDF, print job, or response thread. During Stage 1, three families produce 12 separate issues: one issue per family per week for four weeks.
 
@@ -34,11 +34,11 @@ A contributor submits only photographs and captions they intentionally choose to
 
 Angela operates the service from submission through deletion. She checks submissions, edits caption text, prepares each family's separate issue, sends the preview, records approval, prints, performs the selected delivery handoff, collects replies, and removes pilot material on schedule.
 
-Angela may use AI within the limits below but remains responsible for every word and layout choice. A senior center, volunteer, print vendor, translator, or delivery partner is optional, not required for Stage 0 or Stage 1.
+Angela may use AI within the limits below but remains responsible for every word and layout choice. A senior center, volunteer, print vendor, translator, or delivery partner is optional, not required for the prototype or its next evolution.
 
 ## 3. Pilot progression
 
-### Stage 0: tabletop rehearsal
+### Prototype: local-first rehearsal
 
 Use invented content only. Produce one complete sample issue and run it through submission, caption editing, layout, curator approval, printing, simulated delivery, reply capture, reply approval, next-issue placement, and deletion.
 
@@ -160,7 +160,7 @@ Instructions, approval choices, and reply prompts must be available in large pri
 
 | Risk                                               | MVP control                                                                                                                                                                         |
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A photograph is shared without suitable permission | Required contributor or guardian attestation; curator review; separate direct permission for any public use; immediate removal from future issues on withdrawal                     |
+| A photograph is shared without suitable permission | Contributor permission checkbox; curator review; separate direct permission for any public use; immediate removal from future issues on withdrawal                     |
 | Content crosses between families                   | Separate workspaces and links; family and recipient names remain visible; Angela checks the approved PDF against the delivery name before printing                                  |
 | AI changes meaning or receives prohibited data     | Caption text only; no photo upload to AI; human review; curator approval; no training use; fully manual fallback                                                                    |
 | The older adult loses agency or feels pressured    | Recipient sets standing preferences, may preview, may decline to reply, approves every reply and recipient, and may pause or leave without explanation                              |
@@ -188,4 +188,4 @@ Before expanding, review every correction, missed issue, consent question, deliv
 
 If connection improves but the phone action does not, revise the supported action before scaling. If the action improves but connection does not, revise the family content and response loop. If neither improves, stop. A larger pilot would only reproduce an unproven service.
 
-The next real-world action is to complete the Stage 0 rehearsal with one invented issue, including a simulated wrong-family placement and full deletion. Then test the local photo-selection path on a trusted device, confirm that captions can be omitted without harming the printed layout, and verify that clearing or closing the tab removes every temporary image before beginning any Stage 1 submission work.
+The next real-world action is to test the local photo-selection path on a trusted device, confirm that captions can be omitted without harming the printed layout, and verify that clearing or closing the tab removes every temporary image before accepting real family submissions.
