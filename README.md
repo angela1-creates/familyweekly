@@ -1,6 +1,6 @@
 # Family Weekly · Stage 0
 
-Family Weekly turns a small set of explicitly submitted family photographs and captions into a private, accessible printed newspaper for one older adult. This repository is a portfolio-quality Stage 0 rehearsal. It uses fictional families and synthetic images only.
+Family Weekly turns a small set of explicitly submitted family photographs and optional captions into a private, accessible printed newspaper for one older adult. This repository is a portfolio-quality, local-first prototype. It includes fictional sample families and also lets someone choose photographs from their own device.
 
 The loop is:
 
@@ -10,7 +10,8 @@ The older adult is a participant, not a monitored subject. Family Weekly never s
 
 ## Stage 0 boundaries
 
-- Use synthetic content only. Real family photos and personal information are not approved.
+- Personal photos may be selected for a local preview on a trusted device. They stay in browser memory, are never uploaded by the app, and disappear when the tab closes or the issue is cleared.
+- The sample family identities are fictional. Replace their identifying details before creating a personal issue, and confirm permission for every selected photograph.
 - Three fictional workspaces are included, and each produces a separate private issue.
 - No backend, accounts, database, analytics, remote logging, or persistent browser storage.
 - Local file selections remain in browser memory and their object URLs are revoked when replaced, removed, reset, or unloaded.
@@ -40,7 +41,7 @@ npm run build
 ## Manual pilot workflow
 
 1. Select a fictional family workspace.
-2. Review its four synthetic contributions.
+2. Review its four sample contributions, or choose up to four photos from the device. The first upload replaces the sample stories; captions are optional and editable.
 3. Correct the intentionally missing permission and guardian attestations.
 4. Compare original and edited captions, and optionally request a predefined demonstration suggestion.
 5. Arrange stories with Move earlier and Move later buttons.
@@ -64,7 +65,7 @@ The prototype does not open or read group conversations, import history, monitor
 
 ## Privacy model
 
-All state is initialized in JavaScript memory. The application does not call `localStorage`, `sessionStorage`, IndexedDB, cookies, analytics, external APIs, or a backend. Family data is not encoded into the browser URL. The bundled photo contact sheet was generated for this fictional demonstration and is served locally.
+All state is initialized in JavaScript memory. The application does not call `localStorage`, `sessionStorage`, IndexedDB, cookies, analytics, external APIs, or a backend. Family data is not encoded into the browser URL. Chosen photos use temporary browser object URLs that are revoked when they are replaced, removed, cleared, or unloaded. The bundled photo contact sheet was generated for this fictional demonstration and is served locally.
 
 The pilot-wide limit is 50 accepted photographs. Each issue may select no more than four items. Approval is blocked when identity or required attestations are missing.
 
@@ -82,6 +83,7 @@ Print CSS hides navigation and controls, preserves 16pt, 18pt, or 20pt body text
 | Capability                          | Stage 0 state                       |
 | ----------------------------------- | ----------------------------------- |
 | Family workspaces and issue builder | Working locally in memory           |
+| Local photo selection               | Working locally; never uploaded     |
 | Synthetic caption suggestions       | Working, predefined demonstration   |
 | Curator preview and approval        | Simulated status workflow           |
 | Browser print                       | Working local browser capability    |
@@ -97,12 +99,12 @@ Print CSS hides navigation and controls, preserves 16pt, 18pt, or 20pt body text
 - The app cannot confirm that a copied message was pasted or delivered.
 - There is no multi-user collaboration or conflict handling.
 - There is no real secure submission link, authentication, or access control.
-- Browser-memory privacy is suitable for invented Stage 0 data only.
+- Personal-photo previews should be created only on a trusted device; there is no account, access control, recovery, or persistence.
 - Caption translations are predefined demonstrations, not a language service.
 
 ## Stage 1 requirements
 
-Before using any real family data, complete a separate privacy and security review. Stage 1 needs approved hosting and access control, a real consent and withdrawal process, encrypted transport and storage, retention and deletion operations, secure family-specific links, incident handling, tested print and delivery procedures, and explicit approval of any server-side AI provider. The three-family service should remain manually operated.
+Before accepting real family data from other people or adding remote submission and persistence, complete a separate privacy and security review. Stage 1 needs approved hosting and access control, a real consent and withdrawal process, encrypted transport and storage, retention and deletion operations, secure family-specific links, incident handling, tested print and delivery procedures, and explicit approval of any server-side AI provider. The three-family service should remain manually operated.
 
 Future WhatsApp and WeChat adapters should begin as reviewed server-side link-sharing tools. They must not ingest chats or request conversation access. Connection work starts only after the manual workflow is proven and the relevant platform, consent, credential, and privacy requirements are approved.
 

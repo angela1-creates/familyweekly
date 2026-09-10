@@ -389,6 +389,53 @@ code {
   border-color: var(--green);
   background: var(--green-soft);
 }
+.upload-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem 1.5rem;
+  align-items: center;
+  margin: 1.25rem 0;
+  padding: 1.25rem;
+  border: 1px solid #adc4b7;
+  border-radius: 0.8rem;
+  background: var(--green-soft);
+}
+.upload-panel h3,
+.upload-panel p {
+  margin: 0.25rem 0;
+}
+.upload-panel > small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+}
+.upload-control {
+  position: relative;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1rem;
+  border-radius: 0.35rem;
+  background: var(--green);
+  color: white;
+  font-weight: 750;
+  cursor: pointer;
+}
+.upload-control:focus-within {
+  outline: 3px solid #d49d55;
+  outline-offset: 3px;
+}
+.upload-control.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.upload-control input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
 .contribution-list,
 .editor-list {
   display: grid;
@@ -804,6 +851,7 @@ code {
   .form-grid,
   .share-panel,
   .copy-grid,
+  .upload-panel,
   .contribution-card,
   .editor-row,
   .comparison {
