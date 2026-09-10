@@ -7,6 +7,7 @@ import {
   canPrint,
   clearIssue,
   invalidateApproval,
+  issueCutoffDate,
   issueNeedsApproval,
   replacePhoto,
   replyForNextIssue,
@@ -37,6 +38,15 @@ const escapeHtml = (value: string): string =>
 
 const activeFamily = (): FamilyWorkspace =>
   state.families[state.activeFamilyId];
+
+const formatDate = (value: string): string => {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(year, month - 1, day));
+};
 
 const announce = (message: string): void => {
   const region = document.querySelector<HTMLElement>("#live-status");
@@ -103,13 +113,10 @@ const field = (
   `<label class="field"><span>${label}</span><input type="${type}" data-family-field="${name}" value="${escapeHtml(value)}" ${help ? `aria-describedby="help-${name}"` : ""}>${help ? `<small id="help-${name}">${help}</small>` : ""}</label>`;
 
 const setupView = (family: FamilyWorkspace): string => {
-  const reminder = `Family Weekly submissions are open for ${family.recipientName}. Please use this private submission link by ${family.issueDate}. Add one photograph, a short caption, and permission to include it in this week's private printed issue.`;
+  const cutoffDate = issueCutoffDate(family.issueDate);
+  const reminder = `Family Weekly submissions are open for ${family.recipientName}. Please add photographs by ${formatDate(cutoffDate)} for the ${formatDate(family.issueDate)} issue. Captions are optional. Please confirm permission to include each photo in this private printed issue.`;
   const messages = [
-    ["reminder", "Copy generic reminder", reminder],
-    ["whatsapp", "Copy for WhatsApp", reminder],
-    ["wechat", "Copy for WeChat", reminder],
-    ["imessage", "Copy for iMessage", reminder],
-    ["email", "Copy for email", reminder],
+    ["reminder", "Copy submission reminder", reminder],
     [
       "preview",
       "Copy preview-ready message",
@@ -123,34 +130,14 @@ const setupView = (family: FamilyWorkspace): string => {
   ];
   return `<section class="view-panel" aria-labelledby="view-title">
     <div class="eyebrow">Part 1 of 5</div><h2 id="view-title" tabindex="-1">Family setup</h2>
-    <p class="lede">One private workspace, one recipient, one family issue. Stage 0 data lives only in this tab.</p>
+    <p class="lede">Name the people this private issue belongs to. The schedule and print defaults are handled for you.</p>
     <div class="form-grid">
       ${field("Family name", "familyName", family.familyName)}
       ${field("Older recipient's preferred name", "recipientName", family.recipientName)}
       ${field("Family curator", "curatorName", family.curatorName)}
-      ${field("Preferred language", "language", family.language)}
-      ${field("Current issue date", "issueDate", family.issueDate, "date")}
-      ${field("Current issue number", "issueNumber", String(family.issueNumber), "number")}
-      <label class="field"><span>Print text size</span><select data-family-field="textSize">${[16, 18, 20].map((size) => `<option value="${size}" ${family.textSize === size ? "selected" : ""}>${size}pt</option>`).join("")}</select></label>
-      <label class="field"><span>Paper</span><select data-family-field="paperSize"><option ${family.paperSize === "Letter" ? "selected" : ""}>Letter</option><option ${family.paperSize === "A4" ? "selected" : ""}>A4</option></select></label>
-      <label class="field"><span>Delivery method</span><select data-family-field="deliveryMethod">${["Family handoff", "Senior-center handoff", "Local mail"].map((option) => `<option ${family.deliveryMethod === option ? "selected" : ""}>${option}</option>`).join("")}</select></label>
-      <label class="field"><span>Communication channel</span><select data-family-field="channel">${[
-        ["whatsapp", "WhatsApp"],
-        ["wechat", "WeChat"],
-        ["imessage", "iMessage"],
-        ["email", "Email"],
-      ]
-        .map(
-          ([id, label]) =>
-            `<option value="${id}" ${family.channel === id ? "selected" : ""}>${label}</option>`,
-        )
-        .join(
-          "",
-        )}</select><small>Transport choice only. Not connected in Stage 0.</small></label>
-      <label class="field"><span>Routine issue approval</span><select data-family-field="approvalLevel"><option ${family.approvalLevel === "Preauthorized" ? "selected" : ""}>Preauthorized</option><option ${family.approvalLevel === "Preview requested" ? "selected" : ""}>Preview requested</option><option ${family.approvalLevel === "Approval required" ? "selected" : ""}>Approval required</option></select><small>The first issue always needs approval. New recipients, sensitive topics, or uncertain consent trigger approval.</small></label>
-      ${field("Sensitive topics to avoid", "sensitiveTopics", family.sensitiveTopics, "text", "Angela pauses and asks before using anything outside these preferences.")}
     </div>
-    <section class="share-panel" aria-labelledby="share-title"><div><div class="eyebrow">Manual channel tools</div><h3 id="share-title">Share submission instructions</h3><p><strong>Demonstration link · not active</strong><br><code>${demonstrationUrl(family)}</code></p></div><div class="copy-grid">${messages.map(([id, label, text]) => `<button class="secondary" data-action="copy" data-message="${escapeHtml(text)}" data-copy-kind="${id}">${label}</button>`).join("")}</div></section>
+    <section class="share-panel schedule-summary" aria-label="Automatic issue schedule"><div><span class="eyebrow">Issue ${family.issueNumber}</span><h3>${formatDate(family.issueDate)}</h3><small>Publication date</small></div><div><span class="eyebrow">Photo cutoff</span><h3>${formatDate(cutoffDate)}</h3><small>After Wednesday, photos move to the following Sunday.</small></div></section>
+    <section class="share-panel" aria-labelledby="share-title"><div><div class="eyebrow">Copy tools</div><h3 id="share-title">Share submission instructions</h3><p><strong>Demonstration link · not active</strong><br><code>${demonstrationUrl(family)}</code></p></div><div class="copy-grid">${messages.map(([id, label, text]) => `<button class="secondary" data-action="copy" data-message="${escapeHtml(text)}" data-copy-kind="${id}">${label}</button>`).join("")}</div></section>
   </section>`;
 };
 
@@ -223,7 +210,7 @@ const newspaper = (family: FamilyWorkspace): string => {
       <div class="story-grid">${pageItems.map((item) => `<section class="newspaper-story"><div class="synthetic-photo newspaper-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}"></div><div><h2>${escapeHtml(item.headline)}</h2>${item.editedCaption.trim() ? `<p>${escapeHtml(item.editedCaption)}</p>` : ""}<p class="story-meta">${escapeHtml([item.who, item.place, item.date].filter(Boolean).join(" - "))}</p></div></section>`).join("")}</div>
       ${pageItems.length === 0 ? `<div class="quiet-page"><p>A little breathing room this week.</p><p>Fewer stories, never smaller words.</p></div>` : ""}
       <section class="private-note-space" aria-label="Private note space"><h2>Notes for me</h2><p>Write a memory, a question, or a note to keep. This space stays private unless you choose to share it.</p><div class="note-lines" aria-hidden="true"></div></section>
-      <footer><span>Private family issue - Synthetic Stage 0 content</span><span>${pageIndex + 1} / 2</span></footer>
+      <footer><span>Private family issue - Local-first prototype</span><span>${pageIndex + 1} / 2</span></footer>
     </article>`,
     )
     .join("")}</div>`;
@@ -234,6 +221,7 @@ const builderView = (
 ): string => `<section class="view-panel builder-view" aria-labelledby="view-title">
   <div class="eyebrow">Part 3 of 5</div><h2 id="view-title" tabindex="-1">Issue builder</h2><p class="lede">Edit words on the left. The fixed, family-specific newspaper stays visible on the right.</p>
   <label class="field headline-field"><span>Issue headline</span><input data-family-field="headline" value="${escapeHtml(family.headline)}"></label>
+  <details class="demo-guide print-settings"><summary>Print settings <span>${family.paperSize} · ${family.textSize}pt</span></summary><div class="form-grid compact"><label class="field"><span>Paper</span><select data-family-field="paperSize"><option ${family.paperSize === "Letter" ? "selected" : ""}>Letter</option><option ${family.paperSize === "A4" ? "selected" : ""}>A4</option></select></label><label class="field"><span>Text size</span><select data-family-field="textSize">${[16, 18, 20].map((size) => `<option value="${size}" ${family.textSize === size ? "selected" : ""}>${size}pt</option>`).join("")}</select></label></div></details>
   <div class="builder-grid"><div class="editor-list">${
     selectedItems(family)
       .map((item, index) => builderItem(item, index, family))
@@ -244,9 +232,10 @@ const builderView = (
 
 const approvalView = (family: FamilyWorkspace): string => {
   const errors = approvalErrors(family);
-  return `<section class="view-panel" aria-labelledby="view-title"><div class="eyebrow">Part 4 of 5</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Approval, print & delivery</h2><p class="lede">The first issue is approved by the curator. Later routine issues follow the selected approval preference.</p></div><span class="${statusClass(family.issueStatus)}">${family.issueStatus}</span></div>
-  ${errors.length ? `<div class="validation-summary" role="alert" tabindex="-1"><h3>Approval is blocked</h3><ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul></div>` : `<div class="callout success"><strong>Ready for curator preview</strong><span>All required identity and permission checks pass.</span></div>`}
-  <div class="approval-layout"><div class="approval-actions"><section><span class="eyebrow">Curator preview · simulated</span><h3>${escapeHtml(family.curatorName)}</h3><p>No message is sent. Use the manual copy tools to notify the curator.</p><div class="button-stack"><button data-action="send-preview" ${errors.length ? "disabled" : ""}>Send simulated preview</button><button data-action="approve" ${errors.length || !["Awaiting curator approval", "Changes requested"].includes(family.issueStatus) ? "disabled" : ""}>Approve issue</button><button class="secondary" data-action="request-changes">Request changes</button><button class="text-button" data-action="skip-issue">Skip this issue</button></div></section><section><span class="eyebrow">Print & handoff</span><h3>${escapeHtml(family.deliveryMethod)}</h3><div class="button-stack"><button data-action="print" ${canPrint(family) ? "" : "disabled"}>Open browser print</button><button class="secondary" data-action="mark-sent" ${family.issueStatus !== "Printed" ? "disabled" : ""}>Record sent or handed off</button><button class="secondary" data-action="mark-received" ${family.issueStatus !== "Sent or handed off" ? "disabled" : ""}>Record received (optional)</button></div><p class="fine-print">Received is a voluntary delivery note. It is not engagement, wellbeing, or relationship data.</p></section></div><div class="mini-preview">${newspaper(family)}</div></div></section>`;
+  const needsPreview = issueNeedsApproval(family);
+  return `<section class="view-panel" aria-labelledby="view-title"><div class="eyebrow">Part 4 of 5</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Approval, print & delivery</h2><p class="lede">Photo permissions are always required. Curator preview can be skipped only for routine issues with a standing preference.</p></div><span class="${statusClass(family.issueStatus)}">${family.issueStatus}</span></div>
+  ${errors.length ? `<div class="validation-summary" role="alert" tabindex="-1"><h3>Complete these checks</h3><ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul></div>` : `<div class="callout success"><strong>${needsPreview ? "Ready for curator preview" : "Ready under the standing preference"}</strong><span>All required identity and photo-permission checks pass.</span></div>`}
+  <div class="approval-layout"><div class="approval-actions"><section><span class="eyebrow">Curator review</span><h3>${escapeHtml(family.curatorName)}</h3><p>${needsPreview ? "Prepare the preview, then record the curator's decision." : "This routine issue can be approved without another preview."}</p><div class="button-stack"><button data-action="send-preview" ${errors.length ? "disabled" : ""}>${needsPreview ? "Prepare curator preview" : "Approve routine issue"}</button><button data-action="approve" ${errors.length || !["Awaiting curator approval", "Changes requested"].includes(family.issueStatus) ? "disabled" : ""}>Approve issue</button><button class="secondary" data-action="request-changes">Request changes</button><button class="text-button" data-action="skip-issue">Skip this issue</button></div>${family.issueNumber === 1 && ["Approved", "Printed", "Sent or handed off", "Received"].includes(family.issueStatus) ? `<div class="standing-preference"><strong>Future routine issues</strong><p>${family.approvalLevel === "Preauthorized" ? "Curator previews may be skipped when all permissions are complete." : "Curator review is still required for every issue."}</p>${family.approvalLevel === "Preauthorized" ? "" : `<button class="secondary" data-action="preauthorize-future">Allow routine issues without another preview</button>`}</div>` : ""}</section><section><span class="eyebrow">Print & handoff</span><label class="field"><span>Delivery method</span><select data-family-field="deliveryMethod">${["Family handoff", "Senior-center handoff", "Local mail"].map((option) => `<option ${family.deliveryMethod === option ? "selected" : ""}>${option}</option>`).join("")}</select></label><div class="button-stack"><button data-action="print" ${canPrint(family) ? "" : "disabled"}>Open browser print</button><button class="secondary" data-action="mark-sent" ${family.issueStatus !== "Printed" ? "disabled" : ""}>Record sent or handed off</button><button class="secondary" data-action="mark-received" ${family.issueStatus !== "Sent or handed off" ? "disabled" : ""}>Record received (optional)</button></div><p class="fine-print">Received is a voluntary delivery note. It is not engagement, wellbeing, or relationship data.</p></section></div><div class="mini-preview">${newspaper(family)}</div></div></section>`;
 };
 
 const replyView = (family: FamilyWorkspace): string => {
@@ -399,6 +388,10 @@ app.addEventListener("click", async (event) => {
     family.issueStatus = "Approved";
     announce("Curator approval recorded.");
   }
+  if (action === "preauthorize-future" && family.issueNumber === 1) {
+    family.approvalLevel = "Preauthorized";
+    announce("Future routine issues may skip curator preview.");
+  }
   if (action === "request-changes") {
     family.issueStatus = "Changes requested";
     announce("Changes requested.");
@@ -463,9 +456,7 @@ app.addEventListener("click", async (event) => {
         target.dataset.message,
         true,
       );
-      announce(
-        `${result.message} ${family.channel === "manual" ? "" : `${channelAdapters[family.channel].status}.`}`,
-      );
+      announce(result.message);
     } catch {
       announce("Clipboard access was unavailable. Nothing was sent.");
     }
