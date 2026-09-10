@@ -144,33 +144,23 @@ describe("Family Weekly application", () => {
     expect(css).toContain(".workflow-nav");
     expect(css).toContain("display: none !important");
     document.querySelector<HTMLElement>('[data-view="builder"]')?.click();
-    expect(document.querySelectorAll(".newspaper-page")).toHaveLength(2);
+    expect(document.querySelectorAll(".newspaper-page")).toHaveLength(1);
   });
 
   it("completes the contribute-to-print journey", () => {
     document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
-
-    const permission = document.querySelector<HTMLInputElement>(
-      '[data-item-id="demo-a-item-2"] [data-item-field="permission"]',
-    )!;
+    const input = document.querySelector<HTMLInputElement>("[data-new-photo-input]")!;
+    const first = new File(["one"], "one.jpg", { type: "image/jpeg" });
+    Object.defineProperty(input, "files", { configurable: true, value: [first] });
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    const permission = document.querySelector<HTMLInputElement>('[data-item-field="permission"]')!;
     permission.checked = true;
     permission.dispatchEvent(new Event("change", { bubbles: true }));
 
     document.querySelector<HTMLElement>('[data-view="builder"]')?.click();
     document
       .querySelector<HTMLElement>(
-        '[data-action="suggest"][data-id="demo-a-item-1"]',
-      )
-      ?.click();
-    expect(document.body.textContent).toContain("Demonstration suggestion");
-    document
-      .querySelector<HTMLElement>(
-        '[data-action="accept-suggestion"][data-id="demo-a-item-1"]',
-      )
-      ?.click();
-    document
-      .querySelector<HTMLElement>(
-        '[data-action="move-later"][data-id="demo-a-item-1"]',
+        '[data-action="move-later"]',
       )
       ?.click();
 

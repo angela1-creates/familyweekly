@@ -96,7 +96,7 @@ const makeItems = (
     permission: !(missingPermission && index === 1),
     showsMinor: moment.minor,
     guardianPermission: !moment.minor || !(missingPermission && index === 1),
-    status: index === 0 ? "Ready for review" : "Draft",
+    status: "Excluded",
   }));
 
 const makeFamily = (
@@ -108,9 +108,7 @@ const makeFamily = (
   missingPermission = false,
 ): FamilyWorkspace => {
   const contributors = [
-    { id: `${id}-curator`, name: curatorName, token: `${id}-curator-demo-token`, active: true },
-    { id: `${id}-mara`, name: "Mara", token: `${id}-mara-demo-token`, active: true },
-    { id: `${id}-theo`, name: "Theo", token: `${id}-theo-demo-token`, active: true },
+    { id: `${id}-curator`, name: curatorName, token: `${id}-curator-demo-token`, active: true, role: "curator" as const },
   ];
   return ({
   id,
