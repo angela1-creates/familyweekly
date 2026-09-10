@@ -39,6 +39,14 @@ describe("Stage 0 application", () => {
     input.dispatchEvent(new Event("change", { bubbles: true }));
 
     expect(document.querySelectorAll(".contribution-card")).toHaveLength(1);
+    expect(document.querySelector(".permission-panel")?.textContent).toContain(
+      "Photo permission Required",
+    );
+    expect(
+      document.querySelector<HTMLInputElement>(
+        '.permission-panel [data-item-field="permission"]',
+      ),
+    ).not.toBeNull();
     expect(document.body.textContent).toContain("Sunday picnic");
     expect(
       document.querySelector<HTMLTextAreaElement>(
@@ -58,6 +66,9 @@ describe("Stage 0 application", () => {
         '[data-item-field="editedCaption"]',
       )?.value,
     ).toBe("We finally got everyone together for a picnic.");
+    expect(document.body.textContent).toContain(
+      "After printing, handwrite a memory",
+    );
   });
 
   it("shows one private family context without a demo workspace switcher", () => {
@@ -132,7 +143,7 @@ describe("Stage 0 application", () => {
     expect(document.querySelectorAll(".newspaper-page")).toHaveLength(2);
   });
 
-  it("completes the full synthetic contribute-to-next-issue journey", () => {
+  it("completes the synthetic contribute-to-print journey", () => {
     document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
 
     const permission = document.querySelector<HTMLInputElement>(
@@ -185,34 +196,9 @@ describe("Stage 0 application", () => {
     expect(window.print).toHaveBeenCalledOnce();
     document.querySelector<HTMLElement>('[data-action="mark-sent"]')?.click();
     expect(document.body.textContent).toContain("Sent or handed off");
-
-    document.querySelector<HTMLElement>('[data-view="reply"]')?.click();
-    const replyText = document.querySelector<HTMLTextAreaElement>(
-      '[data-reply-field="text"]',
-    )!;
-    replyText.value =
-      "I loved the fort. Please tell June I want the full story.";
-    replyText.dispatchEvent(new Event("change", { bubbles: true }));
-    const permissionChoice = document.querySelector<HTMLSelectElement>(
-      '[data-reply-field="permission"]',
-    )!;
-    permissionChoice.value = "Include in next issue";
-    permissionChoice.dispatchEvent(new Event("change", { bubbles: true }));
-    const exactApproval = document.querySelector<HTMLInputElement>(
-      '[data-reply-field="exactWordingApproved"]',
-    )!;
-    exactApproval.checked = true;
-    exactApproval.dispatchEvent(new Event("change", { bubbles: true }));
-
-    const nextIssue = document.querySelector<HTMLButtonElement>(
-      '[data-action="next-issue"]',
-    )!;
-    expect(nextIssue.disabled).toBe(false);
-    nextIssue.click();
-    expect(document.body.textContent).toContain("Issue 2");
-    expect(document.body.textContent).toContain(
-      "I loved the fort. Please tell June I want the full story.",
+    expect(document.querySelector('[data-view="reply"]')).toBeNull();
+    expect(document.body.textContent).not.toContain(
+      "reviewed and approved this exact wording",
     );
-    expect(document.querySelectorAll(".newspaper-page")).toHaveLength(2);
   });
 });
