@@ -478,11 +478,37 @@ code {
   border-radius: 0.8rem;
   background: #fffdf8;
 }
-.synthetic-photo {
+.photo-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
   min-height: 250px;
   background-repeat: no-repeat;
   background-size: 200% 200%;
   background-color: #d7cbbd;
+}
+.photo-frame > span {
+  color: #65594e;
+  font-size: .85rem;
+  font-weight: 700;
+}
+.photo-remove {
+  position: absolute;
+  top: .55rem;
+  right: .55rem;
+  z-index: 1;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(35, 29, 24, .78);
+  color: white;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
 }
 .contribution-content {
   padding: 1.3rem;
@@ -900,7 +926,7 @@ code {
   .comparison {
     grid-template-columns: 1fr;
   }
-  .synthetic-photo {
+  .photo-frame {
     min-height: 220px;
   }
   .section-heading,

@@ -12,16 +12,11 @@ import {
   replyForNextIssue,
   selectedItems,
 } from "../model";
-import { createDemoState, syntheticPhotoUrl } from "../synthetic-data";
+import { createDemoState } from "../synthetic-data";
 
 describe("issue rules", () => {
-  it("uses the configured deployment base for synthetic photos", () => {
-    expect(syntheticPhotoUrl).toBe(
-      "/familyweekly/synthetic/family-moments.png",
-    );
-    expect(createDemoState().families["demo-a"].contributions[0].photoSrc).toBe(
-      syntheticPhotoUrl,
-    );
+  it("starts without synthetic photos", () => {
+    expect(createDemoState().families["demo-a"].contributions[0].photoSrc).toBe("");
   });
 
   it("enforces the four-item maximum", () => {
@@ -44,17 +39,6 @@ describe("issue rules", () => {
     expect(
       approvalErrors(family).some((error) =>
         error.includes("permission is required"),
-      ),
-    ).toBe(true);
-  });
-
-  it("blocks approval for a minor without guardian attestation", () => {
-    const family = createDemoState().families["demo-b"];
-    family.contributions[0].showsMinor = true;
-    family.contributions[0].guardianPermission = false;
-    expect(
-      approvalErrors(family).some((error) =>
-        error.includes("guardian attestation"),
       ),
     ).toBe(true);
   });

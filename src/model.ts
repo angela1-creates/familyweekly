@@ -99,9 +99,6 @@ export const approvalErrors = (family: FamilyWorkspace): string[] => {
   selected.forEach((item) => {
     if (!item.permission)
       errors.push(`${item.headline}: permission is required.`);
-    if (item.showsMinor && !item.guardianPermission) {
-      errors.push(`${item.headline}: guardian attestation is required.`);
-    }
   });
   return errors;
 };

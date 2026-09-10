@@ -77,6 +77,7 @@ const statusLabel = (status: IssueStatus): string =>
   status === "Approved" ? "Ready to print" : status;
 
 const photoStyle = (item: Contribution): string => {
+  if (!item.photoSrc) return "";
   if (item.isObjectUrl)
     return `background-image:url('${item.photoSrc}');background-size:cover;background-position:center`;
   const positions: Record<string, string> = {
@@ -143,14 +144,13 @@ const contributionCard = (
   item: Contribution,
   index: number,
 ): string => `<article class="contribution-card" data-item-id="${item.id}">
-  <div class="synthetic-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}"></div>
+  <div class="photo-frame" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}">${item.photoSrc ? "" : "<span>No photo added yet</span>"}<button class="photo-remove" data-action="remove-item" data-id="${item.id}" aria-label="Remove ${escapeHtml(item.headline)}">×</button></div>
   <div class="contribution-content"><div class="card-heading"><div><span class="item-number">Item ${index + 1}</span><h3>${escapeHtml(item.headline)}</h3></div><span class="status">${item.status}</span></div>
     <label class="field"><span>Headline</span><input data-item-field="headline" value="${escapeHtml(item.headline)}"></label>
     <label class="field"><span>Original caption</span><textarea data-item-field="originalCaption" rows="3">${escapeHtml(item.originalCaption)}</textarea></label>
-    <fieldset class="permission-panel"><legend>Photo permission <strong>Required</strong></legend><label class="check"><input type="checkbox" data-item-field="permission" ${item.permission ? "checked" : ""}><span>I have permission to share this photo with this Family Weekly.</span></label><label class="check"><input type="checkbox" data-item-field="showsMinor" ${item.showsMinor ? "checked" : ""}><span>This photograph shows a minor.</span></label>${item.showsMinor ? `<label class="check nested"><input type="checkbox" data-item-field="guardianPermission" ${item.guardianPermission ? "checked" : ""}><span>A parent or guardian confirms the minor may appear.</span></label>` : ""}</fieldset>
+    <fieldset class="permission-panel"><legend>Photo permission <strong>Required</strong></legend><label class="check"><input type="checkbox" data-item-field="permission" ${item.permission ? "checked" : ""}><span>I have permission to share this photo with this Family Weekly.</span></label></fieldset>
     <div class="form-grid compact">${fieldForItem(item, "Who is pictured", "who", item.who)}${fieldForItem(item, "Optional date", "date", item.date ?? "", "date")}${fieldForItem(item, "Optional place", "place", item.place ?? "")}${fieldForItem(item, "Contributor", "contributor", item.contributor)}</div>
     <label class="field"><span>Status</span><select data-item-field="status">${["Draft", "Ready for review", "Deferred", "Excluded"].map((status) => `<option ${item.status === status ? "selected" : ""}>${status}</option>`).join("")}</select></label>
-    <div class="button-row"><button class="secondary" data-action="move-earlier" data-id="${item.id}" ${index === 0 ? "disabled" : ""}>Move earlier</button><button class="secondary" data-action="move-later" data-id="${item.id}" ${index === activeFamily().contributions.length - 1 ? "disabled" : ""}>Move later</button><button class="text-button danger" data-action="remove-item" data-id="${item.id}">Remove</button></div>
     <label class="field file-field"><span>Replace with a local image</span><input type="file" accept="image/*" data-photo-input="${item.id}"><small>Held in browser memory only. It is never uploaded.</small></label>
   </div></article>`;
 
@@ -175,8 +175,8 @@ const contributionsView = (
   family: FamilyWorkspace,
 ): string => `<section class="view-panel" aria-labelledby="view-title">
   <div class="eyebrow">Part 2 of 4</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Contributions</h2><p class="lede">Add or review up to four photographs. Captions are optional and always remain editable.</p></div><div class="count-box"><strong>${selectedItems(family).length}/4</strong><span>selected</span><small>${state.pilotPhotoCount}/50 pilot photos</small></div></div>
-  <section class="upload-panel" aria-labelledby="upload-title"><div><div class="eyebrow">Your family moments</div><h3 id="upload-title">Add photos from this device</h3><p>Choose one or more images. They stay in this browser tab, are never uploaded, and disappear when the tab closes.</p></div><label class="field"><span>Submitting as</span><select data-family-field="activeContributorId">${family.contributors.filter((contributor) => contributor.active).map((contributor) => `<option value="${contributor.id}" ${family.activeContributorId === contributor.id ? "selected" : ""}>${escapeHtml(contributor.name)}</option>`).join("")}</select></label><label class="upload-control ${canChoosePhotos(family) ? "" : "is-disabled"}"><span>Choose photos</span><input type="file" accept="image/*" multiple data-new-photo-input ${canChoosePhotos(family) ? "" : "disabled"}></label><small>Up to 15 MB per image. ${hasOnlySampleContributions(family) ? "Your first upload replaces the four sample stories." : `${Math.max(0, 4 - selectedItems(family).length)} spaces remain in this issue.`}</small></section>
-  <div class="callout warning"><strong>Permission still comes first</strong><span>Confirm permission—and guardian permission when a minor appears—before approving the issue.</span></div>
+  <section class="upload-panel" aria-labelledby="upload-title"><div><div class="eyebrow">Your family moments</div><h3 id="upload-title">Add up to four photos at once</h3><p>Choose multiple images from this device. They stay in this browser tab, are never uploaded, and disappear when the tab closes.</p></div><label class="field"><span>Submitting as</span><select data-family-field="activeContributorId">${family.contributors.filter((contributor) => contributor.active).map((contributor) => `<option value="${contributor.id}" ${family.activeContributorId === contributor.id ? "selected" : ""}>${escapeHtml(contributor.name)}</option>`).join("")}</select></label><label class="upload-control ${canChoosePhotos(family) ? "" : "is-disabled"}"><span>Choose up to 4 photos</span><input type="file" accept="image/*" multiple data-new-photo-input ${canChoosePhotos(family) ? "" : "disabled"}></label><small>Up to 15 MB per image. Select several files in the picker, or return here to add more.</small></section>
+  <div class="callout warning"><strong>Permission still comes first</strong><span>Confirm that you have permission to share each photo before approving the issue.</span></div>
   <div class="contribution-list">${family.contributions.map(contributionCard).join("")}</div>
 </section>`;
 
@@ -185,7 +185,7 @@ const builderItem = (
   index: number,
   family: FamilyWorkspace,
 ): string => `<article class="editor-row">
-  <div class="synthetic-photo editor-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}"></div>
+  <div class="photo-frame editor-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}">${item.photoSrc ? "" : "<span>No photo added yet</span>"}</div>
   <div><div class="card-heading"><div><span class="item-number">Story ${index + 1}</span><h3>${escapeHtml(item.headline)}</h3></div><div class="order-buttons"><button class="icon-button" data-action="move-earlier" data-id="${item.id}" aria-label="Move ${escapeHtml(item.headline)} earlier" ${index === 0 ? "disabled" : ""}>↑</button><button class="icon-button" data-action="move-later" data-id="${item.id}" aria-label="Move ${escapeHtml(item.headline)} later" ${index === selectedItems(family).length - 1 ? "disabled" : ""}>↓</button></div></div>
     <div class="comparison"><div><span>Original</span><p>${escapeHtml(item.originalCaption)}</p></div><label><span>Edited caption</span><textarea rows="4" data-item-field="editedCaption" data-id="${item.id}">${escapeHtml(item.editedCaption)}</textarea></label></div>
     ${item.suggestion ? `<div class="suggestion"><span class="eyebrow">Demonstration suggestion</span><p>${escapeHtml(item.suggestion)}</p><div class="button-row"><button data-action="accept-suggestion" data-id="${item.id}">Accept suggestion</button><button class="secondary" data-action="reject-suggestion" data-id="${item.id}">Reject</button></div></div>` : ""}
@@ -203,7 +203,7 @@ const newspaper = (family: FamilyWorkspace): string => {
       ) => `<article class="newspaper-page" aria-label="Page ${pageIndex + 1} of 2">
       ${pageIndex === 0 ? `<header class="masthead"><span>Family Weekly</span><span>${escapeHtml(family.familyName)}</span></header><div class="newspaper-title"><p>Issue ${family.issueNumber} - ${escapeHtml(family.issueDate)}</p><h1>${escapeHtml(family.headline)}</h1><p>Made for ${escapeHtml(family.recipientName)}</p></div>` : `<header class="page-kicker"><span>Family Weekly - ${escapeHtml(family.familyName)} - For ${escapeHtml(family.recipientName)}</span><span>Page 2</span></header>`}
       ${family.openingReply && pageIndex === 0 ? `<blockquote class="reply-note"><strong>A note from ${escapeHtml(family.recipientName)}</strong><p>${escapeHtml(family.openingReply)}</p></blockquote>` : ""}
-      <div class="story-grid">${pageItems.map((item) => `<section class="newspaper-story"><div class="synthetic-photo newspaper-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}"></div><div><h2>${escapeHtml(item.headline)}</h2>${item.editedCaption.trim() ? `<p>${escapeHtml(item.editedCaption)}</p>` : ""}<p class="story-meta">${escapeHtml([item.who, item.place, item.date].filter(Boolean).join(" - "))}</p></div></section>`).join("")}</div>
+      <div class="story-grid">${pageItems.map((item) => `<section class="newspaper-story"><div class="photo-frame newspaper-photo" role="img" aria-label="${escapeHtml(photoLabel(item))}" style="${photoStyle(item)}">${item.photoSrc ? "" : "<span>No photo</span>"}</div><div><h2>${escapeHtml(item.headline)}</h2>${item.editedCaption.trim() ? `<p>${escapeHtml(item.editedCaption)}</p>` : ""}<p class="story-meta">${escapeHtml([item.who, item.place, item.date].filter(Boolean).join(" - "))}</p></div></section>`).join("")}</div>
       ${pageItems.length === 0 ? `<div class="quiet-page"><p>A little breathing room this week.</p><p>Fewer stories, never smaller words.</p></div>` : ""}
       <section class="private-note-space" aria-label="Handwriting space on the printed issue"><h2>Notes for me</h2><p>After printing, handwrite a memory, question, or private note in this space. Nothing written here is stored digitally.</p><div class="note-lines" aria-hidden="true"></div></section>
       <footer><span>Private family issue - Local-first prototype</span><span>${pageIndex + 1} / 2</span></footer>
@@ -465,7 +465,7 @@ app.addEventListener("click", async (event) => {
     clearIssue(family, URL.revokeObjectURL.bind(URL));
   if (
     action === "reset-family" &&
-    confirmReset(`Reset all Stage 0 data for ${family.familyName}?`)
+    confirmReset(`Reset all prototype data for ${family.familyName}?`)
   ) {
     clearIssue(family, URL.revokeObjectURL.bind(URL));
     const fresh = createDemoState().families[family.id];

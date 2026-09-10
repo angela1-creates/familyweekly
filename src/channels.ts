@@ -15,7 +15,7 @@ export interface ChannelAdapter {
 export class ManualChannelAdapter implements ChannelAdapter {
   readonly id = "manual" as const;
   readonly label = "Manual copy";
-  readonly status = "Available in Stage 0";
+  readonly status = "Available in prototype";
 
   constructor(
     private readonly writer: (text: string) => Promise<void> = (text) =>
@@ -32,7 +32,7 @@ export class ManualChannelAdapter implements ChannelAdapter {
 }
 
 export class PlaceholderChannelAdapter implements ChannelAdapter {
-  readonly status = "Not connected in Stage 0";
+  readonly status = "Not connected in prototype";
 
   constructor(
     readonly id: Exclude<Channel, "manual">,
@@ -42,7 +42,7 @@ export class PlaceholderChannelAdapter implements ChannelAdapter {
   async copy(): Promise<ChannelResult> {
     return {
       ok: false,
-      message: `${this.label} is not connected in Stage 0. Use manual copy.`,
+      message: `${this.label} is not connected in the prototype. Use manual copy.`,
     };
   }
 }

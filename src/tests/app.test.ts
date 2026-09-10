@@ -8,7 +8,7 @@ const loadApp = async () => {
   await import("../main");
 };
 
-describe("Stage 0 application", () => {
+describe("Family Weekly application", () => {
   beforeEach(async () => {
     await loadApp();
   });
@@ -77,7 +77,6 @@ describe("Stage 0 application", () => {
     expect(document.querySelector(".identity-strip")?.textContent).toContain(
       "Nana Rosa",
     );
-    expect(document.body.textContent).not.toContain("Stage 0 guided rehearsal");
     expect(document.body.textContent).not.toContain("14 steps");
   });
 
@@ -127,11 +126,6 @@ describe("Stage 0 application", () => {
         '.validation-summary [data-view="contributions"]',
       )
       ?.click();
-    expect(
-      document.querySelector<HTMLInputElement>(
-        '[data-item-id="demo-a-item-2"] [data-item-field="guardianPermission"]',
-      ),
-    ).not.toBeNull();
   });
 
   it("contains no persistent storage or external request calls", async () => {
@@ -153,7 +147,7 @@ describe("Stage 0 application", () => {
     expect(document.querySelectorAll(".newspaper-page")).toHaveLength(2);
   });
 
-  it("completes the synthetic contribute-to-print journey", () => {
+  it("completes the contribute-to-print journey", () => {
     document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
 
     const permission = document.querySelector<HTMLInputElement>(
@@ -161,12 +155,6 @@ describe("Stage 0 application", () => {
     )!;
     permission.checked = true;
     permission.dispatchEvent(new Event("change", { bubbles: true }));
-
-    const guardian = document.querySelector<HTMLInputElement>(
-      '[data-item-id="demo-a-item-2"] [data-item-field="guardianPermission"]',
-    )!;
-    guardian.checked = true;
-    guardian.dispatchEvent(new Event("change", { bubbles: true }));
 
     document.querySelector<HTMLElement>('[data-view="builder"]')?.click();
     document
