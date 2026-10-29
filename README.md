@@ -1,6 +1,6 @@
 # Family Weekly
 
-Family Weekly turns a small set of explicitly submitted family photographs and optional captions into a private, accessible printed newspaper for one older adult. This repository is a portfolio-quality, local-first prototype. It includes fictional sample families and also lets someone choose photographs from their own device.
+Family Weekly turns a small set of explicitly submitted family photographs and optional captions into a private, accessible printed newspaper for one older adult. This repository is a portfolio-quality, local-first prototype. It starts as one blank personal issue and offers one optional fictional sample rehearsal.
 
 The loop is:
 
@@ -11,8 +11,7 @@ The older adult is a participant, not a monitored subject. Family Weekly never s
 ## Prototype boundaries
 
 - Personal photos may be selected for a local preview on a trusted device. They stay in browser memory, are never uploaded by the app, and disappear when the tab closes or the issue is cleared.
-- The sample family identities are fictional. Replace their identifying details before creating a personal issue, and confirm permission for every selected photograph.
-- Three fictional workspaces are included, and each produces a separate private issue.
+- The Rivera sample identity and photos are fictional. Selecting **Exit sample and start my own issue** clears them together before personal information is entered.
 - No backend, accounts, database, analytics, remote logging, or persistent browser storage.
 - Local file selections remain in browser memory and their object URLs are revoked when replaced, removed, reset, or unloaded.
 - Refreshing or closing the tab discards working state.
@@ -40,8 +39,8 @@ npm run build
 
 ## Manual pilot workflow
 
-1. Select a fictional family workspace.
-2. Choose **Load sample issue** for a no-real-data rehearsal, or choose up to four photos from the device. Select multiple files in one picker; captions are optional and editable.
+1. Enter family information in the blank setup. Example placeholders are hints only and are never saved or printed.
+2. Optionally choose **Try a sample issue** for a no-real-data rehearsal, or continue with personal information and choose up to four photos from the device. Select multiple files in one picker; captions are optional and editable.
 3. Confirm permission to share each selected photo.
 4. Compare original and edited captions, and optionally request a predefined demonstration suggestion.
 5. Arrange stories in the Issue builder.
@@ -86,18 +85,18 @@ After linking this repository to a Vercel project, deploy the production build a
 
 ## Simulated, manual, and connected
 
-| Capability                          | Prototype state                     |
-| ----------------------------------- | ----------------------------------- |
-| Family workspaces and issue builder | Working locally in memory           |
-| Local photo selection               | Working locally; never uploaded     |
-| Caption suggestions                 | Working, predefined demonstration   |
-| Curator preview and approval        | Simulated status workflow           |
-| Browser print                       | Working local browser capability    |
-| Delivery and receipt                | Manual operator record only         |
-| Clipboard messages                  | Working after explicit button press |
-| WhatsApp, WeChat, iMessage, email   | Not connected                       |
-| Replies                             | Synthetic manual record only        |
-| Backend, accounts, persistence      | Not implemented                     |
+| Capability                        | Prototype state                     |
+| --------------------------------- | ----------------------------------- |
+| Personal issue and issue builder  | Working locally in memory           |
+| Local photo selection             | Working locally; never uploaded     |
+| Caption suggestions               | Working, predefined demonstration   |
+| Curator preview and approval      | Simulated status workflow           |
+| Browser print                     | Working local browser capability    |
+| Delivery and receipt              | Manual operator record only         |
+| Clipboard messages                | Working after explicit button press |
+| WhatsApp, WeChat, iMessage, email | Not connected                       |
+| Replies                           | Synthetic manual record only        |
+| Backend, accounts, persistence    | Not implemented                     |
 
 ## Known limitations
 

@@ -8,6 +8,21 @@ const loadApp = async () => {
   await import("../main");
 };
 
+const fillPersonalSetup = (): void => {
+  const values = {
+    familyName: "Lee Family",
+    recipientName: "Grandma May",
+    curatorName: "Jordan Lee",
+  };
+  Object.entries(values).forEach(([name, value]) => {
+    const input = document.querySelector<HTMLInputElement>(
+      `[data-family-field="${name}"]`,
+    )!;
+    input.value = value;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+};
+
 describe("Family Weekly application", () => {
   beforeEach(async () => {
     await loadApp();
@@ -69,23 +84,26 @@ describe("Family Weekly application", () => {
     expect(document.body.textContent).toContain("Your notes");
   });
 
-  it("keeps three fictional family workspaces visibly separate", () => {
-    const switcher =
-      document.querySelector<HTMLSelectElement>("#family-switcher")!;
-    expect(switcher.options).toHaveLength(3);
-    expect(document.body.textContent).toContain("Rivera Family");
+  it("starts with one blank personal setup and example hints", () => {
+    expect(document.querySelector("#family-switcher")).toBeNull();
+    const familyName = document.querySelector<HTMLInputElement>(
+      '[data-family-field="familyName"]',
+    )!;
+    const recipientName = document.querySelector<HTMLInputElement>(
+      '[data-family-field="recipientName"]',
+    )!;
+    const curatorName = document.querySelector<HTMLInputElement>(
+      '[data-family-field="curatorName"]',
+    )!;
+    expect(familyName.value).toBe("");
+    expect(recipientName.value).toBe("");
+    expect(curatorName.value).toBe("");
+    expect(familyName.placeholder).toBe("e.g., Rivera Family");
+    expect(recipientName.placeholder).toBe("e.g., Nana Rosa");
+    expect(curatorName.placeholder).toBe("e.g., Elena Rivera");
     expect(document.querySelector(".identity-strip")?.textContent).toContain(
-      "Nana Rosa",
+      "Your family",
     );
-    switcher.value = "demo-b";
-    switcher.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(document.querySelector(".identity-strip")?.textContent).toContain(
-      "Patel Family",
-    );
-    expect(
-      document.querySelector(".identity-strip")?.textContent,
-    ).not.toContain("Rivera Family");
-    expect(document.body.textContent).not.toContain("14 steps");
   });
 
   it("keeps setup focused and moves optional choices to their point of use", () => {
@@ -152,7 +170,6 @@ describe("Family Weekly application", () => {
     expect(css).toContain("@media print");
     expect(css).toContain(".workflow-nav");
     expect(css).toContain("display: none !important");
-    document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
     document
       .querySelector<HTMLElement>('[data-action="load-sample-issue"]')
       ?.click();
@@ -161,7 +178,6 @@ describe("Family Weekly application", () => {
   });
 
   it("loads a fictional issue and unlocks approval, print, delivery, and reply", () => {
-    document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
     document
       .querySelector<HTMLElement>('[data-action="load-sample-issue"]')
       ?.click();
@@ -191,7 +207,42 @@ describe("Family Weekly application", () => {
     expect(document.querySelector('[data-reply-field="text"]')).not.toBeNull();
   });
 
+  it("exits the sample and returns to a blank personal issue in one click", () => {
+    document
+      .querySelector<HTMLElement>('[data-action="load-sample-issue"]')
+      ?.click();
+    expect(document.querySelectorAll(".contribution-card")).toHaveLength(4);
+    expect(document.body.textContent).toContain("Fictional sample issue");
+
+    document
+      .querySelector<HTMLElement>('[data-action="start-personal-issue"]')
+      ?.click();
+    expect(
+      document.querySelector<HTMLInputElement>(
+        '[data-family-field="familyName"]',
+      )?.value,
+    ).toBe("");
+    expect(
+      document.querySelector<HTMLInputElement>(
+        '[data-family-field="recipientName"]',
+      )?.value,
+    ).toBe("");
+    expect(
+      document.querySelector<HTMLInputElement>(
+        '[data-family-field="curatorName"]',
+      )?.value,
+    ).toBe("");
+    expect(document.body.textContent).not.toContain("Fictional sample issue");
+    document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
+    expect(document.querySelectorAll(".contribution-card")).toHaveLength(0);
+    expect(
+      document.querySelector<HTMLInputElement>("[data-new-photo-input]")
+        ?.disabled,
+    ).toBe(false);
+  });
+
   it("completes the contribute-to-print journey", () => {
+    fillPersonalSetup();
     document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
     const input = document.querySelector<HTMLInputElement>(
       "[data-new-photo-input]",

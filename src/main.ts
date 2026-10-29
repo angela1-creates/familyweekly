@@ -14,13 +14,13 @@ import {
   selectedItems,
   type Contribution,
   type FamilyContributor,
-  type FamilyId,
   type FamilyWorkspace,
   type IssueStatus,
 } from "./model";
 import {
+  createBlankFamily,
   createDemoState,
-  createSampleIssueContributions,
+  createSampleFamily,
 } from "./synthetic-data";
 
 type View =
@@ -162,33 +162,32 @@ const workflowControls = (current: View): string => {
   return `<div class="workflow-controls" aria-label="Continue through workflow">${previous ? `<button class="secondary" data-action="view" data-view="${previous}">Back to ${labels[previous]}</button>` : ""}${next ? `<button data-action="view" data-view="${next}">Next: ${labels[next]} <span aria-hidden="true">→</span></button>` : `<span class="workflow-complete">Final step: record an optional reply or begin the next issue</span>`}</div>`;
 };
 
-const familyOptions = (): string =>
-  Object.values(state.families)
-    .map(
-      (family) =>
-        `<option value="${family.id}" ${family.id === state.activeFamilyId ? "selected" : ""}>${escapeHtml(family.familyName)} · for ${escapeHtml(family.recipientName)}</option>`,
-    )
-    .join("");
-
 const field = (
   label: string,
   name: string,
   value: string,
   type = "text",
   help = "",
+  placeholder = "",
 ): string =>
-  `<label class="field"><span>${label}</span><input type="${type}" data-family-field="${name}" value="${escapeHtml(value)}" ${help ? `aria-describedby="help-${name}"` : ""}>${help ? `<small id="help-${name}">${help}</small>` : ""}</label>`;
+  `<label class="field"><span>${label}</span><input type="${type}" data-family-field="${name}" value="${escapeHtml(value)}" ${placeholder ? `placeholder="${escapeHtml(placeholder)}"` : ""} ${help ? `aria-describedby="help-${name}"` : ""}>${help ? `<small id="help-${name}">${help}</small>` : ""}</label>`;
+
+const isSampleIssue = (family: FamilyWorkspace): boolean =>
+  family.contributions.some(
+    (item) => Boolean(item.photoSrc) && !item.isObjectUrl,
+  );
 
 const setupView = (family: FamilyWorkspace): string => {
   const cutoffDate = issueCutoffDate(family.issueDate);
   return `<section class="view-panel" aria-labelledby="view-title">
     <div class="eyebrow">Part 1 of 6</div><h2 id="view-title" tabindex="-1">Family setup</h2>
-    <p class="lede">Name the people this private issue belongs to. The schedule and print defaults are handled for you.</p>
+    <p class="lede">Start with your family information. Example text is only a hint and is never saved or printed.</p>
     <div class="form-grid">
-      ${field("Family name", "familyName", family.familyName)}
-      ${field("Older recipient's preferred name", "recipientName", family.recipientName)}
-      ${field("Family organizer", "curatorName", family.curatorName)}
+      ${field("Family name", "familyName", family.familyName, "text", "", "e.g., Rivera Family")}
+      ${field("Older recipient's preferred name", "recipientName", family.recipientName, "text", "", "e.g., Nana Rosa")}
+      ${field("Family organizer", "curatorName", family.curatorName, "text", "", "e.g., Elena Rivera")}
     </div>
+    <section class="sample-panel" aria-labelledby="sample-title"><div><div class="eyebrow">Optional rehearsal</div><h3 id="sample-title">Want to explore before adding personal information?</h3><p>Load one fictional Rivera issue to try captions, permissions, approval, printing, delivery, and reply.</p></div><button class="secondary" data-action="load-sample-issue">Try a sample issue</button></section>
     <section class="share-panel schedule-summary" aria-label="Automatic issue schedule"><div><span class="eyebrow">Issue ${family.issueNumber}</span><h3>${formatDate(family.issueDate)}</h3><small>Publication date</small></div><div><span class="eyebrow">Photo cutoff</span><h3>${formatDate(cutoffDate)}</h3><small>After Wednesday, photos move to the following Sunday.</small></div></section>
     <section class="share-panel contributor-invites" aria-labelledby="contributors-title"><div class="section-heading"><div><span class="eyebrow">Persistent family circle</span><h3 id="contributors-title">Invite contributors once</h3><p>Each person gets a private link they can reuse for every weekly issue. The organizer owns the family circle and cannot be revoked.</p></div><button data-action="invite-contributor">Add contributor</button></div><div class="invite-list">${family.contributors.map((contributor) => `<div class="invite-row ${contributor.active ? "" : "is-revoked"}"><div><strong>${escapeHtml(contributor.name)}</strong><small>${contributor.role === "curator" ? "Organizer · permanent member" : contributor.active ? "Active member" : "Revoked"}</small></div><div class="invite-actions">${contributor.role === "curator" ? "" : contributor.active ? `<button class="secondary" data-action="share-contributor" data-contributor-id="${contributor.id}">Share link</button><button class="text-button danger" data-action="revoke-contributor" data-contributor-id="${contributor.id}">Revoke</button>` : `<button class="secondary" data-action="restore-contributor" data-contributor-id="${contributor.id}">Restore</button>`}</div></div>`).join("")}</div></section>
     ${workflowControls("setup")}
@@ -235,7 +234,6 @@ const contributionsView = (
   family: FamilyWorkspace,
 ): string => `<section class="view-panel" aria-labelledby="view-title">
   <div class="eyebrow">Part 2 of 6</div><div class="section-heading"><div><h2 id="view-title" tabindex="-1">Contributions</h2><p class="lede">Contributors may submit up to four photos each. Select up to ${MAX_ISSUE_ITEMS} stories for this issue; captions remain editable.</p></div><div class="count-box"><strong>${selectedItems(family).length}/${MAX_ISSUE_ITEMS}</strong><span>selected</span><small>Up to 4 photos per contributor</small></div></div>
-  <section class="sample-panel" aria-labelledby="sample-title"><div><div class="eyebrow">Five-minute guided rehearsal</div><h3 id="sample-title">Use fictional photos, not family data</h3><p>Load a complete synthetic issue to review captions and permissions, approve it, open the two-page print preview, record delivery, and try the optional reply loop.</p></div><button data-action="load-sample-issue">Load sample issue</button></section>
   <section class="upload-panel" aria-labelledby="upload-title"><div><div class="eyebrow">Your family moments</div><h3 id="upload-title">Add up to four photos</h3><p>Select several images at once when your device allows it. If the picker only accepts one, choose this button again to add the rest. Photos stay in this browser tab and are never uploaded.</p></div><label class="field"><span>Submitting as</span><select data-family-field="activeContributorId">${family.contributors
     .filter((contributor) => contributor.active)
     .map(
@@ -347,7 +345,7 @@ const render = (): void => {
     delivery: deliveryView,
     reply: replyView,
   };
-  app.innerHTML = `<div class="prototype-banner" role="note"><strong>Private prototype:</strong> photos stay in this browser tab so you can arrange and print them. Nothing is uploaded, and closing the tab clears them.</div><div class="app-shell"><header class="app-header"><a class="brand" href="#" data-action="view" data-view="setup" aria-label="Family Weekly home"><span>Family</span> Weekly</a><label class="family-switcher"><span>Fictional workspace</span><select id="family-switcher">${familyOptions()}</select></label><div class="issue-status"><span class="${statusClass(family.issueStatus)}">${statusLabel(family.issueStatus)}</span><small>Issue ${family.issueNumber}</small></div></header><div class="identity-strip"><div><span>Family</span><strong>${escapeHtml(family.familyName)}</strong></div><div><span>Made for</span><strong>${escapeHtml(family.recipientName)}</strong></div><div class="identity-warning">Never combine family workspaces</div></div>${nav()}<main id="main-content">${views[view](family)}</main><footer class="app-footer"><p>Local-first prototype · Sample or personal photos · No external integrations</p><div><button class="text-button" data-action="clear-issue">Clear current issue</button><button class="text-button" data-action="reset-family">Reset current family demo</button><button class="text-button danger" data-action="reset-all">Reset all demonstration data</button></div></footer></div><div id="live-status" class="sr-only" role="status" aria-live="polite"></div>`;
+  app.innerHTML = `<div class="prototype-banner" role="note"><strong>Private prototype:</strong> photos stay in this browser tab so you can arrange and print them. Nothing is uploaded, and closing the tab clears them.</div><div class="app-shell"><header class="app-header"><a class="brand" href="#" data-action="view" data-view="setup" aria-label="Family Weekly home"><span>Family</span> Weekly</a><div class="issue-status"><span class="${statusClass(family.issueStatus)}">${statusLabel(family.issueStatus)}</span><small>Issue ${family.issueNumber}</small></div></header><div class="identity-strip"><div><span>Family</span><strong>${escapeHtml(family.familyName || "Your family")}</strong></div><div><span>Made for</span><strong>${escapeHtml(family.recipientName || "Your recipient")}</strong></div></div>${isSampleIssue(family) ? `<aside class="sample-mode-bar" role="status"><div><strong>Fictional sample issue</strong><span>Nothing here is personal data.</span></div><button class="secondary" data-action="start-personal-issue">Exit sample and start my own issue</button></aside>` : ""}${nav()}<main id="main-content">${views[view](family)}</main><footer class="app-footer"><p>Local-first prototype · Sample or personal photos · No external integrations</p><div><button class="text-button" data-action="clear-issue">Clear current issue</button><button class="text-button danger" data-action="reset-family">Start over</button></div></footer></div><div id="live-status" class="sr-only" role="status" aria-live="polite"></div>`;
 };
 
 const getItem = (id: string): Contribution | undefined =>
@@ -463,23 +461,46 @@ app.addEventListener("click", async (event) => {
     const hasLocalPhotos = family.contributions.some(
       (entry) => entry.isObjectUrl,
     );
+    const hasPersonalInformation = Boolean(
+      family.familyName.trim() ||
+      family.recipientName.trim() ||
+      family.curatorName.trim(),
+    );
     if (
-      hasLocalPhotos &&
+      (hasLocalPhotos || hasPersonalInformation) &&
       !confirmReset(
-        "Replace the current local photos with a fictional sample issue?",
+        "Replace the current information and photos with a fictional sample issue?",
       )
     )
       return;
     family.contributions.forEach((entry) => {
       if (entry.isObjectUrl) URL.revokeObjectURL(entry.photoSrc);
     });
-    family.contributions = createSampleIssueContributions(family.id);
-    family.issueStatus = "Draft";
-    family.reply = undefined;
-    family.openingReply = undefined;
+    state.families[family.id] = createSampleFamily(family.id);
+    view = "contributions";
+    render();
     announce(
       "Fictional sample issue loaded. Four synthetic stories are ready for review.",
     );
+    focusView();
+    return;
+  }
+  if (action === "start-personal-issue") {
+    family.contributions.forEach((entry) => {
+      if (entry.isObjectUrl) URL.revokeObjectURL(entry.photoSrc);
+    });
+    state.families[family.id] = createBlankFamily(family.id);
+    view = "setup";
+    render();
+    announce(
+      "Sample cleared. Add your family information to start your own issue.",
+    );
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLInputElement>('[data-family-field="familyName"]')
+        ?.focus(),
+    );
+    return;
   }
   if (action === "remove-item" && item) {
     if (item.isObjectUrl) URL.revokeObjectURL(item.photoSrc);
@@ -655,31 +676,23 @@ app.addEventListener("click", async (event) => {
   if (
     action === "clear-issue" &&
     confirmReset(
-      `Clear Issue ${family.issueNumber} for ${family.recipientName}?`,
+      `Clear Issue ${family.issueNumber} for ${family.recipientName || "this recipient"}?`,
     )
   )
     clearIssue(family, URL.revokeObjectURL.bind(URL));
   if (
     action === "reset-family" &&
-    confirmReset(`Reset all prototype data for ${family.familyName}?`)
+    confirmReset("Start over with a blank issue?")
   ) {
-    clearIssue(family, URL.revokeObjectURL.bind(URL));
-    const fresh = createDemoState().families[family.id];
-    state.families[family.id] = fresh;
-    announce("Current family demo restored.");
-  }
-  if (
-    action === "reset-all" &&
-    confirmReset("Reset all three demonstration families?")
-  ) {
-    Object.values(state.families).forEach((entry) =>
-      entry.contributions.forEach((itemValue) => {
-        if (itemValue.isObjectUrl) URL.revokeObjectURL(itemValue.photoSrc);
-      }),
-    );
-    state = createDemoState();
+    family.contributions.forEach((entry) => {
+      if (entry.isObjectUrl) URL.revokeObjectURL(entry.photoSrc);
+    });
+    state.families[family.id] = createBlankFamily(family.id);
     view = "setup";
-    announce("All demonstration data restored.");
+    render();
+    announce("Blank issue ready.");
+    focusView();
+    return;
   }
   render();
 });
@@ -688,15 +701,6 @@ app.addEventListener("change", (event) => {
   const input = event.target as
     HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
   const family = activeFamily();
-  if (input.id === "family-switcher") {
-    state.activeFamilyId = input.value as FamilyId;
-    render();
-    focusView();
-    announce(
-      `Switched to ${activeFamily().familyName}. Only this family's content is visible.`,
-    );
-    return;
-  }
   if (input.dataset.familyField) {
     const key = input.dataset.familyField as keyof FamilyWorkspace;
     const value: unknown =

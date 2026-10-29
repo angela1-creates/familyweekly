@@ -153,32 +153,32 @@ const makeFamily = (
   };
 };
 
+export const createBlankFamily = (id: FamilyId): FamilyWorkspace => {
+  const family = makeFamily(id, "", "", "", "");
+  family.contributions = [];
+  family.headline = "This week, from all of us";
+  return family;
+};
+
+export const createSampleFamily = (id: FamilyId): FamilyWorkspace => {
+  const family = makeFamily(
+    id,
+    "Rivera Family",
+    "Nana Rosa",
+    "Elena Rivera",
+    "English and Spanish",
+  );
+  family.contributions = createSampleIssueContributions(id);
+  return family;
+};
+
 export const createDemoState = (): DemoState => ({
   activeFamilyId: "demo-a",
-  pilotPhotoCount: 12,
+  pilotPhotoCount: 0,
   families: {
-    "demo-a": makeFamily(
-      "demo-a",
-      "Rivera Family",
-      "Nana Rosa",
-      "Elena Rivera",
-      "English and Spanish",
-      true,
-    ),
-    "demo-b": makeFamily(
-      "demo-b",
-      "Patel Family",
-      "Dadaji",
-      "Nikhil Patel",
-      "English",
-    ),
-    "demo-c": makeFamily(
-      "demo-c",
-      "Chen Family",
-      "Grandma Lin",
-      "Mei Chen",
-      "Chinese and English",
-    ),
+    "demo-a": createBlankFamily("demo-a"),
+    "demo-b": createBlankFamily("demo-b"),
+    "demo-c": createBlankFamily("demo-c"),
   },
 });
 

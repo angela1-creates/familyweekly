@@ -14,14 +14,17 @@ import {
 } from "../model";
 import {
   createDemoState,
+  createSampleFamily,
   createSampleIssueContributions,
 } from "../synthetic-data";
 
 describe("issue rules", () => {
-  it("starts without synthetic photos", () => {
-    expect(createDemoState().families["demo-a"].contributions[0].photoSrc).toBe(
-      "",
-    );
+  it("starts as a blank personal issue", () => {
+    const family = createDemoState().families["demo-a"];
+    expect(family.familyName).toBe("");
+    expect(family.recipientName).toBe("");
+    expect(family.curatorName).toBe("");
+    expect(family.contributions).toEqual([]);
   });
 
   it("creates an approval-ready fictional sample issue on demand", () => {
@@ -90,7 +93,7 @@ describe("issue rules", () => {
   });
 
   it("invalidates approval after an edit", () => {
-    const family = createDemoState().families["demo-b"];
+    const family = createSampleFamily("demo-b");
     family.issueStatus = "Approved";
     family.contributions[0].editedCaption = "A careful human edit.";
     invalidateApproval(family);
@@ -131,6 +134,7 @@ describe("issue rules", () => {
 
   it("keeps family contribution records separate", () => {
     const state = createDemoState();
+    state.families["demo-a"] = createSampleFamily("demo-a");
     const riveraIds = state.families["demo-a"].contributions.map(
       (item) => item.id,
     );
@@ -163,8 +167,13 @@ describe("issue rules", () => {
 
   it("clears issue data and revokes local image URLs", () => {
     const family = createDemoState().families["demo-b"];
-    family.contributions[0].photoSrc = "blob:test-image";
-    family.contributions[0].isObjectUrl = true;
+    family.contributions = [
+      {
+        ...createSampleIssueContributions("demo-b")[0],
+        photoSrc: "blob:test-image",
+        isObjectUrl: true,
+      },
+    ];
     const revoke = vi.fn();
     clearIssue(family, revoke);
     expect(revoke).toHaveBeenCalledWith("blob:test-image");
@@ -173,7 +182,7 @@ describe("issue rules", () => {
   });
 
   it("revokes an old object URL when replacing a local image", () => {
-    const item = createDemoState().families["demo-b"].contributions[0];
+    const item = createSampleIssueContributions("demo-b")[0];
     item.photoSrc = "blob:old";
     item.isObjectUrl = true;
     const revoke = vi.fn();
@@ -187,7 +196,7 @@ describe("issue rules", () => {
     first.families["demo-b"].headline = "Unsaved edit";
     const refreshed = createDemoState();
     expect(refreshed.families["demo-b"].headline).toBe(
-      "Small moments, saved for you",
+      "This week, from all of us",
     );
   });
 });

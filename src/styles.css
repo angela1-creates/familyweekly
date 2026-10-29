@@ -114,7 +114,7 @@ a:focus-visible {
 }
 .app-header {
   display: grid;
-  grid-template-columns: 1fr minmax(240px, 420px) auto;
+  grid-template-columns: 1fr auto;
   gap: 2rem;
   align-items: end;
   padding: 1.5rem 0 1rem;
@@ -130,17 +130,6 @@ a:focus-visible {
 }
 .brand span {
   color: var(--burgundy);
-}
-.family-switcher {
-  display: grid;
-  gap: 0.3rem;
-}
-.family-switcher span {
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 .field > span,
 .comparison span {
@@ -328,6 +317,25 @@ h3 {
 }
 .sample-panel button {
   flex: 0 0 auto;
+}
+.sample-mode-bar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #9a876f;
+  border-radius: 0.75rem;
+  background: #f5eadc;
+}
+.sample-mode-bar div {
+  display: grid;
+  gap: 0.15rem;
+}
+.sample-mode-bar span {
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 .form-grid {
   display: grid;
@@ -1001,6 +1009,7 @@ code {
   }
   .section-heading,
   .sample-panel,
+  .sample-mode-bar,
   .app-footer {
     align-items: flex-start;
     flex-direction: column;
