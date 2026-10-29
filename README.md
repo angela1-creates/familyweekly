@@ -41,7 +41,7 @@ npm run build
 ## Manual pilot workflow
 
 1. Select a fictional family workspace.
-2. Review the sample stories, or choose up to four photos from the device. Select multiple files in one picker; captions are optional and editable.
+2. Choose **Load sample issue** for a no-real-data rehearsal, or choose up to four photos from the device. Select multiple files in one picker; captions are optional and editable.
 3. Confirm permission to share each selected photo.
 4. Compare original and edited captions, and optionally request a predefined demonstration suggestion.
 5. Arrange stories in the Issue builder.
@@ -67,20 +67,26 @@ The prototype does not open or read group conversations, import history, monitor
 
 All state is initialized in JavaScript memory. The application does not call `localStorage`, `sessionStorage`, IndexedDB, cookies, analytics, external APIs, or a backend. Family data is not encoded into the browser URL. Chosen photos use temporary browser object URLs that are revoked when they are replaced, removed, cleared, or unloaded. The bundled photo contact sheet was generated for this fictional demonstration and is served locally.
 
-The pilot-wide limit is 50 accepted photographs. Each issue may select no more than four items. Approval is blocked when identity or required attestations are missing.
+Each contributor may add up to four photos, and each issue may select no more than 16 items. Approval is blocked when identity or required permissions are missing.
 
 ## Print instructions
 
 1. Correct all validation errors.
 2. Send the simulated curator preview and select **Approve issue**.
-3. Select **Open browser print**.
+3. Select **Print or save as PDF**.
 4. In the browser dialog, choose Letter or A4 to match the workspace setting, enable background graphics, use 100% scale, and print double-sided with a long-edge flip.
 
 Print CSS hides navigation and controls, preserves 16pt, 18pt, or 20pt body text, and emits two pages. Each page includes the family and recipient identity. Fewer stories are used instead of shrinking text.
 
+## Deployment
+
+`vercel.json` configures a standalone Vercel deployment with `dist` as the output directory. Vite uses `/` for local and Vercel builds, while GitHub Actions keeps the existing `/familyweekly/` base path for GitHub Pages.
+
+After linking this repository to a Vercel project, deploy the production build and use the production URL as the portfolio’s **Try the experience** link. Do not update the portfolio CTA until Vercel returns the final hostname.
+
 ## Simulated, manual, and connected
 
-| Capability                          | Prototype state                    |
+| Capability                          | Prototype state                     |
 | ----------------------------------- | ----------------------------------- |
 | Family workspaces and issue builder | Working locally in memory           |
 | Local photo selection               | Working locally; never uploaded     |

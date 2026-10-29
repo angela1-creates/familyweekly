@@ -66,17 +66,25 @@ describe("Family Weekly application", () => {
         '[data-item-field="editedCaption"]',
       )?.value,
     ).toBe("We finally got everyone together for a picnic.");
-    expect(document.body.textContent).toContain(
-      "Your notes",
-    );
+    expect(document.body.textContent).toContain("Your notes");
   });
 
-  it("shows one private family context without a demo workspace switcher", () => {
-    expect(document.querySelector("#family-switcher")).toBeNull();
+  it("keeps three fictional family workspaces visibly separate", () => {
+    const switcher =
+      document.querySelector<HTMLSelectElement>("#family-switcher")!;
+    expect(switcher.options).toHaveLength(3);
     expect(document.body.textContent).toContain("Rivera Family");
     expect(document.querySelector(".identity-strip")?.textContent).toContain(
       "Nana Rosa",
     );
+    switcher.value = "demo-b";
+    switcher.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(document.querySelector(".identity-strip")?.textContent).toContain(
+      "Patel Family",
+    );
+    expect(
+      document.querySelector(".identity-strip")?.textContent,
+    ).not.toContain("Rivera Family");
     expect(document.body.textContent).not.toContain("14 steps");
   });
 
@@ -101,18 +109,19 @@ describe("Family Weekly application", () => {
     expect(
       document.querySelector('[data-family-field="textSize"]'),
     ).not.toBeNull();
-    document.querySelector<HTMLElement>('[data-view="approval"]')?.click();
+    document.querySelector<HTMLElement>('[data-view="delivery"]')?.click();
     expect(
       document.querySelector('[data-family-field="deliveryMethod"]'),
     ).not.toBeNull();
   });
 
   it("renders print controls disabled before curator approval", () => {
-    document.querySelector<HTMLElement>('[data-view="approval"]')?.click();
+    document.querySelector<HTMLElement>('[data-view="delivery"]')?.click();
     const print = document.querySelector<HTMLButtonElement>(
       '[data-action="print"]',
     );
     expect(print?.disabled).toBe(true);
+    document.querySelector<HTMLElement>('[data-view="approval"]')?.click();
     const approve = document.querySelector<HTMLButtonElement>(
       '[data-action="approve"]',
     )!;
@@ -143,26 +152,64 @@ describe("Family Weekly application", () => {
     expect(css).toContain("@media print");
     expect(css).toContain(".workflow-nav");
     expect(css).toContain("display: none !important");
+    document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
+    document
+      .querySelector<HTMLElement>('[data-action="load-sample-issue"]')
+      ?.click();
     document.querySelector<HTMLElement>('[data-view="builder"]')?.click();
-    expect(document.querySelectorAll(".newspaper-page")).toHaveLength(1);
+    expect(document.querySelectorAll(".newspaper-page")).toHaveLength(2);
+  });
+
+  it("loads a fictional issue and unlocks approval, print, delivery, and reply", () => {
+    document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
+    document
+      .querySelector<HTMLElement>('[data-action="load-sample-issue"]')
+      ?.click();
+    expect(document.querySelectorAll(".contribution-card")).toHaveLength(4);
+    expect(
+      document.querySelectorAll<HTMLInputElement>(
+        '[data-item-field="permission"]:checked',
+      ),
+    ).toHaveLength(4);
+
+    document.querySelector<HTMLElement>('[data-view="approval"]')?.click();
+    document.querySelector<HTMLElement>('[data-action="approve"]')?.click();
+    expect(document.querySelector(".app-header .status")?.textContent).toBe(
+      "Ready to print",
+    );
+
+    document.querySelector<HTMLElement>('[data-view="delivery"]')?.click();
+    document.querySelector<HTMLElement>('[data-action="print"]')?.click();
+    document
+      .querySelector<HTMLElement>('[data-action="mark-printed"]')
+      ?.click();
+    document.querySelector<HTMLElement>('[data-action="mark-sent"]')?.click();
+    expect(document.body.textContent).toContain("Sent or handed off");
+
+    document.querySelector<HTMLElement>('[data-view="reply"]')?.click();
+    expect(document.body.textContent).toContain("Record a reply (optional)");
+    expect(document.querySelector('[data-reply-field="text"]')).not.toBeNull();
   });
 
   it("completes the contribute-to-print journey", () => {
     document.querySelector<HTMLElement>('[data-view="contributions"]')?.click();
-    const input = document.querySelector<HTMLInputElement>("[data-new-photo-input]")!;
+    const input = document.querySelector<HTMLInputElement>(
+      "[data-new-photo-input]",
+    )!;
     const first = new File(["one"], "one.jpg", { type: "image/jpeg" });
-    Object.defineProperty(input, "files", { configurable: true, value: [first] });
+    Object.defineProperty(input, "files", {
+      configurable: true,
+      value: [first],
+    });
     input.dispatchEvent(new Event("change", { bubbles: true }));
-    const permission = document.querySelector<HTMLInputElement>('[data-item-field="permission"]')!;
+    const permission = document.querySelector<HTMLInputElement>(
+      '[data-item-field="permission"]',
+    )!;
     permission.checked = true;
     permission.dispatchEvent(new Event("change", { bubbles: true }));
 
     document.querySelector<HTMLElement>('[data-view="builder"]')?.click();
-    document
-      .querySelector<HTMLElement>(
-        '[data-action="move-later"]',
-      )
-      ?.click();
+    document.querySelector<HTMLElement>('[data-action="move-later"]')?.click();
 
     document.querySelector<HTMLElement>('[data-view="approval"]')?.click();
     const approve = document.querySelector<HTMLButtonElement>(
@@ -180,12 +227,17 @@ describe("Family Weekly application", () => {
     expect(document.body.textContent).toContain(
       "Organizer previews may be skipped",
     );
+    document.querySelector<HTMLElement>('[data-view="delivery"]')?.click();
     document.querySelector<HTMLElement>('[data-action="print"]')?.click();
     expect(window.print).toHaveBeenCalledOnce();
+    document
+      .querySelector<HTMLElement>('[data-action="mark-printed"]')
+      ?.click();
     document.querySelector<HTMLElement>('[data-action="mark-sent"]')?.click();
     expect(document.body.textContent).toContain("Sent or handed off");
-    expect(document.querySelector('[data-view="reply"]')).toBeNull();
-    expect(document.body.textContent).not.toContain(
+    expect(document.querySelector('[data-view="reply"]')).not.toBeNull();
+    document.querySelector<HTMLElement>('[data-view="reply"]')?.click();
+    expect(document.body.textContent).toContain(
       "reviewed and approved this exact wording",
     );
   });

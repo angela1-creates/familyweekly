@@ -12,11 +12,26 @@ import {
   replyForNextIssue,
   selectedItems,
 } from "../model";
-import { createDemoState } from "../synthetic-data";
+import {
+  createDemoState,
+  createSampleIssueContributions,
+} from "../synthetic-data";
 
 describe("issue rules", () => {
   it("starts without synthetic photos", () => {
-    expect(createDemoState().families["demo-a"].contributions[0].photoSrc).toBe("");
+    expect(createDemoState().families["demo-a"].contributions[0].photoSrc).toBe(
+      "",
+    );
+  });
+
+  it("creates an approval-ready fictional sample issue on demand", () => {
+    const sample = createSampleIssueContributions("demo-a");
+    expect(sample).toHaveLength(4);
+    expect(
+      sample.every((item) => item.photoSrc.includes("family-moments.png")),
+    ).toBe(true);
+    expect(sample.every((item) => item.permission)).toBe(true);
+    expect(sample.every((item) => item.status !== "Excluded")).toBe(true);
   });
 
   it("enforces the four-item maximum", () => {
@@ -40,31 +55,33 @@ describe("issue rules", () => {
     expect(approvalErrors(family)).toContain("Select no more than 16 items.");
   });
 
-  it("enforces the pilot-wide 50-photo limit", () => {
+  it("does not impose a pilot-wide photo limit", () => {
     const state = createDemoState();
     state.pilotPhotoCount = 49;
     expect(canAddPhoto(state)).toBe(true);
     state.pilotPhotoCount = 50;
-    expect(canAddPhoto(state)).toBe(false);
+    expect(canAddPhoto(state)).toBe(true);
   });
 
   it("blocks approval when permission is missing", () => {
     const family = createDemoState().families["demo-a"];
-    family.contributions = [{
-      id: "missing-permission",
-      photoSrc: "blob:photo",
-      photoPosition: "center",
-      originalCaption: "A moment",
-      editedCaption: "A moment",
-      headline: "A moment",
-      who: "Family",
-      contributor: "Elena",
-      contributorId: "demo-a-curator",
-      permission: false,
-      showsMinor: false,
-      guardianPermission: false,
-      status: "Draft",
-    }];
+    family.contributions = [
+      {
+        id: "missing-permission",
+        photoSrc: "blob:photo",
+        photoPosition: "center",
+        originalCaption: "A moment",
+        editedCaption: "A moment",
+        headline: "A moment",
+        who: "Family",
+        contributor: "Elena",
+        contributorId: "demo-a-curator",
+        permission: false,
+        showsMinor: false,
+        guardianPermission: false,
+        status: "Draft",
+      },
+    ];
     expect(
       approvalErrors(family).some((error) =>
         error.includes("permission is required"),

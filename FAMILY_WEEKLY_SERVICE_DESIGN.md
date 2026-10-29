@@ -160,7 +160,7 @@ Instructions, approval choices, and reply prompts must be available in large pri
 
 | Risk                                               | MVP control                                                                                                                                                                         |
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A photograph is shared without suitable permission | Contributor permission checkbox; curator review; separate direct permission for any public use; immediate removal from future issues on withdrawal                     |
+| A photograph is shared without suitable permission | Contributor permission checkbox; curator review; separate direct permission for any public use; immediate removal from future issues on withdrawal                                  |
 | Content crosses between families                   | Separate workspaces and links; family and recipient names remain visible; Angela checks the approved PDF against the delivery name before printing                                  |
 | AI changes meaning or receives prohibited data     | Caption text only; no photo upload to AI; human review; curator approval; no training use; fully manual fallback                                                                    |
 | The older adult loses agency or feels pressured    | Recipient sets standing preferences, may preview, may decline to reply, approves every reply and recipient, and may pause or leave without explanation                              |

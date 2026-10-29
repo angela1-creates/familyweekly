@@ -153,8 +153,7 @@ export const issueCutoffDate = (issueDate: string): string => {
   return localDateString(cutoff);
 };
 
-export const canAddPhoto = (state: DemoState): boolean =>
-  state.pilotPhotoCount < 50;
+export const canAddPhoto = (state: DemoState): boolean => Boolean(state);
 
 export const replyForNextIssue = (reply?: Reply): string | undefined =>
   reply?.exactWordingApproved && reply.permission === "Include in next issue"

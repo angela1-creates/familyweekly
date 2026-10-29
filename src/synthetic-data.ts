@@ -6,6 +6,8 @@ import {
   type FamilyWorkspace,
 } from "./model";
 
+export const syntheticPhotoUrl = `${import.meta.env.BASE_URL}synthetic/family-moments.png`;
+
 const moments = [
   {
     headline: "Sunday under the maple",
@@ -99,6 +101,18 @@ const makeItems = (
     status: "Excluded",
   }));
 
+export const createSampleIssueContributions = (
+  familyId: FamilyId,
+): Contribution[] =>
+  makeItems(familyId).map((item, index) => ({
+    ...item,
+    photoSrc: syntheticPhotoUrl,
+    contributorId: `${familyId}-curator`,
+    permission: true,
+    guardianPermission: true,
+    status: index === 0 ? "Ready for review" : "Draft",
+  }));
+
 const makeFamily = (
   id: FamilyId,
   familyName: string,
@@ -108,28 +122,35 @@ const makeFamily = (
   missingPermission = false,
 ): FamilyWorkspace => {
   const contributors = [
-    { id: `${id}-curator`, name: curatorName, token: `${id}-curator-demo-token`, active: true, role: "curator" as const },
+    {
+      id: `${id}-curator`,
+      name: curatorName,
+      token: `${id}-curator-demo-token`,
+      active: true,
+      role: "curator" as const,
+    },
   ];
-  return ({
-  id,
-  familyName,
-  recipientName,
-  curatorName,
-  language,
-  textSize: 18,
-  paperSize: "Letter",
-  deliveryMethod: "Family handoff",
-  channel: "manual",
-  issueDate: nextIssueDate(),
-  issueNumber: 1,
-  issueStatus: "Draft",
-  approvalLevel: "Approval required",
-  sensitiveTopics: "No medical, financial, or private family conflict stories",
-  headline: "Small moments, saved for you",
-  contributions: makeItems(id, missingPermission),
+  return {
+    id,
+    familyName,
+    recipientName,
+    curatorName,
+    language,
+    textSize: 18,
+    paperSize: "Letter",
+    deliveryMethod: "Family handoff",
+    channel: "manual",
+    issueDate: nextIssueDate(),
+    issueNumber: 1,
+    issueStatus: "Draft",
+    approvalLevel: "Approval required",
+    sensitiveTopics:
+      "No medical, financial, or private family conflict stories",
+    headline: "Small moments, saved for you",
+    contributions: makeItems(id, missingPermission),
     contributors,
     activeContributorId: contributors[0].id,
-  });
+  };
 };
 
 export const createDemoState = (): DemoState => ({
